@@ -1,111 +1,134 @@
-# MCP Fat Zebra
+# MCP Fat Zebra Integration
 
-A Model Context Protocol (MCP) server that provides several useful tools for AI assistants.
+This is an MCP (Multi-Channel Payments) server that provides integration with the [Fat Zebra](https://docs.fatzebra.com/) payment gateway.
 
 ## Features
 
-This MCP server provides the following tools:
+- **Credit Card Payments**: Process direct credit card payments
+- **Tokenization**: Securely tokenize cards for future payments
+- **Token Payments**: Process payments using tokenized cards
+- **Refunds**: Process refunds for previous transactions
 
-1. **Example Tool** - A simple example tool that processes messages
-2. **Weather Tool** - Get current weather information for a location
-3. **Calculator Tool** - Perform basic arithmetic operations
-4. **URL Shortener Tool** - Create and resolve shortened URLs
+## Setup
 
-## Installation
+### Prerequisites
+
+- Node.js 18.19.0 or higher
+- Fat Zebra merchant account and API credentials
+
+### Installation
+
+1. Clone this repository
+2. Install dependencies:
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/mcp-fat-zebra.git
-cd mcp-fat-zebra
-
-# Install dependencies
 npm install
+```
 
-# Build the project
+3. Build the project:
+
+```bash
 npm run build
 ```
 
-## Usage
+### Configuration
 
-### Starting the Server
+Set the following environment variables before starting the server:
+
+- `FAT_ZEBRA_USERNAME`: Your Fat Zebra username
+- `FAT_ZEBRA_TOKEN`: Your Fat Zebra API token
+- `FAT_ZEBRA_API_URL` (optional): Fat Zebra API URL (defaults to sandbox: https://gateway.sandbox.fatzebra.com/v1.0)
+
+Example:
+
+```bash
+export FAT_ZEBRA_USERNAME=your-username
+export FAT_ZEBRA_TOKEN=your-token
+```
+
+For production:
+
+```bash
+export FAT_ZEBRA_API_URL=https://gateway.fatzebra.com/v1.0
+```
+
+### Running the server
 
 ```bash
 npm start
 ```
 
-This will start the MCP server on the default port.
+## Available Tools
 
-### Tool Usage
+### 1. Credit Card Payment
 
-#### Example Tool
+Process a direct credit card payment.
 
-```json
-{
-  "name": "example_tool",
-  "input": {
-    "message": "Hello, world!"
-  }
-}
+```typescript
+// Example usage
+const result = await client.call("fat_zebra_payment", {
+  amount: 1000, // $10.00
+  currency: "AUD",
+  card_number: "4111111111111111",
+  card_expiry: "12/25",
+  card_cvv: "123",
+  reference: "ORDER-123",
+  customer_name: "John Smith",
+  customer_email: "john@example.com",
+});
 ```
 
-#### Weather Tool
+### 2. Tokenize Card
 
-```json
-{
-  "name": "get_weather",
-  "input": {
-    "location": "New York"
-  }
-}
+Tokenize a credit card for future use.
+
+```typescript
+// Example usage
+const result = await client.call("fat_zebra_tokenize", {
+  card_number: "4111111111111111",
+  card_expiry: "12/25",
+  card_cvv: "123",
+  card_holder: "John Smith",
+});
 ```
 
-#### Calculator Tool
+### 3. Token Payment
 
-```json
-{
-  "name": "calculator",
-  "input": {
-    "operation": "add",
-    "a": 5,
-    "b": 10
-  }
-}
+Process a payment using a tokenized card.
+
+```typescript
+// Example usage
+const result = await client.call("fat_zebra_token_payment", {
+  amount: 1000, // $10.00
+  currency: "AUD",
+  card_token: "card-token-from-tokenization",
+  reference: "ORDER-124",
+  cvv: "123", // Optional for token payments
+});
 ```
 
-#### URL Shortener Tool
+### 4. Process Refund
 
-Shorten a URL:
+Refund a previous transaction.
 
-```json
-{
-  "name": "url_shortener",
-  "input": {
-    "action": "shorten",
-    "url": "https://example.com/very/long/url/path/that/needs/shortening"
-  }
-}
+```typescript
+// Example usage
+const result = await client.call("fat_zebra_refund", {
+  transaction_id: "transaction-id-from-payment",
+  amount: 1000, // $10.00
+  reference: "REFUND-123",
+});
 ```
 
-Resolve a shortened URL:
+## Testing
 
-```json
-{
-  "name": "url_shortener",
-  "input": {
-    "action": "resolve",
-    "shortCode": "abc123"
-  }
-}
-```
+Fat Zebra provides a sandbox environment and test cards for development:
 
-## Development
+- Test Card: 4111 1111 1111 1111
+- Expiry: Any future date (e.g., 12/25)
+- CVV: Any 3-digit number (e.g., 123)
 
-Add new tools by creating TypeScript files in the `src/tools` directory that export a class extending `MCPTool`.
-
-```bash
-# Add a new tool using the MCP CLI
-npx mcp add tool MyNewTool
-```
+For more test cases, refer to the [Fat Zebra documentation](https://docs.fatzebra.com/).
 
 ## License
 

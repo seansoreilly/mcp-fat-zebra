@@ -3,6 +3,10 @@ import ExampleTool from "./tools/ExampleTool.js";
 import WeatherTool from "./tools/WeatherTool.js";
 import CalculatorTool from "./tools/CalculatorTool.js";
 import UrlShortenerTool from "./tools/UrlShortenerTool.js";
+import FatZebraTool from "./tools/FatZebraTool.js";
+import FatZebraTokenizeTool from "./tools/FatZebraTokenizeTool.js";
+import FatZebraTokenPaymentTool from "./tools/FatZebraTokenPaymentTool.js";
+import FatZebraRefundTool from "./tools/FatZebraRefundTool.js";
 
 process.stderr.write("[INFO] Starting MCP Fat Zebra server...\n");
 
