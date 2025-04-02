@@ -4,7 +4,7 @@ import fetch from "node-fetch";
 
 interface FatZebraTokenPaymentInput {
   amount: number;
-  currency: string;
+  currency?: string;
   card_token: string;
   reference: string;
   cvv?: string;
@@ -17,10 +17,10 @@ interface FatZebraTokenPaymentInput {
 // Define request body interface with all possible properties
 interface TokenPaymentRequestBody {
   amount: number;
-  currency: string;
+  currency?: string;
   card_token: string;
   reference: string;
-  customer_ip: string;
+  customer_ip?: string;
   cvv?: string;
   customer_name?: string;
   customer_email?: string;
@@ -75,8 +75,7 @@ class FatZebraTokenPaymentTool extends MCPTool<FatZebraTokenPaymentInput> {
       description: "The amount to charge in cents (e.g., 1000 for $10.00)",
     },
     currency: {
-      // Use fixed string instead of default
-      type: z.string(),
+      type: z.string().optional().default("AUD"),
       description: "The three-letter ISO currency code (default: AUD)",
     },
     card_token: {
@@ -111,27 +110,36 @@ class FatZebraTokenPaymentTool extends MCPTool<FatZebraTokenPaymentInput> {
 
   async execute(input: FatZebraTokenPaymentInput) {
     try {
-      // Prepare the request body for the Fat Zebra API
+      // Prepare the request body for the Fat Zebra API - only include essential parameters
       const requestBody: TokenPaymentRequestBody = {
         amount: input.amount,
-        currency: input.currency || "AUD", // Provide default if somehow not set
         card_token: input.card_token,
         reference: input.reference,
-        customer_ip: input.customer_ip || "127.0.0.1",
-        capture: input.capture ?? true,
       };
 
-      // Add optional fields if provided
+      // Only add non-essential parameters if they're provided
+      if (input.currency) {
+        requestBody.currency = input.currency;
+      }
+      
       if (input.cvv) {
         requestBody.cvv = input.cvv;
       }
 
+      if (input.customer_ip) {
+        requestBody.customer_ip = input.customer_ip;
+      }
+      
       if (input.customer_name) {
         requestBody.customer_name = input.customer_name;
       }
 
       if (input.customer_email) {
         requestBody.customer_email = input.customer_email;
+      }
+      
+      if (input.capture !== undefined) {
+        requestBody.capture = input.capture;
       }
 
       // Make the request to the Fat Zebra API

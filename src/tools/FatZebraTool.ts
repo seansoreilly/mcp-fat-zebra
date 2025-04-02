@@ -18,12 +18,12 @@ interface FatZebraPaymentInput {
 // Define request body interface with all possible properties
 interface PaymentRequestBody {
   amount: number;
-  currency: string;
+  currency?: string;
   card_number: string;
   card_expiry: string;
   card_cvv: string;
   reference: string;
-  customer_ip: string;
+  customer_ip?: string;
   customer_name?: string;
   customer_email?: string;
   capture?: boolean;
@@ -71,6 +71,10 @@ class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
   private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
   
+  // Default test card that works with Fat Zebra
+  private defaultTestCard = "5123456789012346";
+  private defaultExpiryDate = "05/2026";
+  
   schema = {
     amount: {
       type: z.number().positive(),
@@ -86,7 +90,7 @@ class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
     },
     card_expiry: {
       type: z.string(),
-      description: "The card expiry date in the format MM/YYYY (e.g., 12/2025)",
+      description: "The card expiry date in the format MM/YYYY (e.g., 05/2026)",
     },
     card_cvv: {
       type: z.string(),
@@ -116,25 +120,42 @@ class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
 
   async execute(input: FatZebraPaymentInput) {
     try {
-      // Prepare the request body for the Fat Zebra API
+      // Use the successful test card if we're in test mode and no card is provided
+      const cardNumber = this.username === "TEST" && !input.card_number ? 
+        this.defaultTestCard : input.card_number;
+      
+      // Use the successful expiry date if we're in test mode and using the default test card
+      const cardExpiry = this.username === "TEST" && cardNumber === this.defaultTestCard ? 
+        this.defaultExpiryDate : input.card_expiry;
+      
+      // Prepare the request body for the Fat Zebra API - only include essential parameters
       const requestBody: PaymentRequestBody = {
         amount: input.amount,
-        currency: input.currency || "AUD",
-        card_number: input.card_number,
-        card_expiry: input.card_expiry,
+        card_number: cardNumber,
+        card_expiry: cardExpiry,
         card_cvv: input.card_cvv,
         reference: input.reference,
-        customer_ip: input.customer_ip || "127.0.0.1",
-        capture: input.capture ?? true,
       };
 
-      // Add optional fields if provided
+      // Only add non-essential parameters if they're provided
+      if (input.currency) {
+        requestBody.currency = input.currency;
+      }
+      
+      if (input.customer_ip) {
+        requestBody.customer_ip = input.customer_ip;
+      }
+      
       if (input.customer_name) {
         requestBody.customer_name = input.customer_name;
       }
 
       if (input.customer_email) {
         requestBody.customer_email = input.customer_email;
+      }
+      
+      if (input.capture !== undefined) {
+        requestBody.capture = input.capture;
       }
 
       // Make the request to the Fat Zebra API
