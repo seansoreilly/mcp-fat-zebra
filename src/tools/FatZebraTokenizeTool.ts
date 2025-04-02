@@ -36,9 +36,9 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
   description = "Tokenize a credit card using the Fat Zebra payment gateway";
   
   // Fat Zebra API configuration
-  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com/v1.0";
-  private username = process.env.FAT_ZEBRA_USERNAME;
-  private token = process.env.FAT_ZEBRA_TOKEN;
+  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com.au/v1.0";
+  private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
+  private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
   
   schema = {
     card_number: {
@@ -47,7 +47,7 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
     },
     card_expiry: {
       type: z.string(),
-      description: "The card expiry date in the format MM/YY (e.g., 12/25)",
+      description: "The card expiry date in the format MM/YYYY (e.g., 12/2025)",
     },
     card_cvv: {
       type: z.string().optional(),
@@ -60,10 +60,6 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
   };
 
   async execute(input: FatZebraTokenizeInput) {
-    if (!this.username || !this.token) {
-      throw new Error("Fat Zebra API credentials not configured. Please set FAT_ZEBRA_USERNAME and FAT_ZEBRA_TOKEN environment variables.");
-    }
-
     try {
       // Prepare the request body for the Fat Zebra API
       const requestBody: TokenizeRequestBody = {
@@ -94,7 +90,11 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
 
       // Check if the response was successful
       if (!data.successful) {
-        throw new Error(`Fat Zebra API error: ${data.errors?.join(', ') || 'Unknown error'}`);
+        // Return the error response directly instead of throwing
+        return {
+          successful: false,
+          errors: data.errors || ["Unknown error from Fat Zebra API"]
+        };
       }
 
       // Return the tokenized card information
@@ -109,7 +109,11 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
       };
     } catch (error) {
       console.error('Error tokenizing card:', error);
-      throw new Error(`Failed to tokenize card: ${error instanceof Error ? error.message : String(error)}`);
+      // Return error as a response instead of throwing
+      return {
+        successful: false,
+        errors: [(error instanceof Error ? error.message : String(error))]
+      };
     }
   }
 }

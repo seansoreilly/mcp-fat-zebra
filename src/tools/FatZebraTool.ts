@@ -4,13 +4,14 @@ import fetch from "node-fetch";
 
 interface FatZebraPaymentInput {
   amount: number;
-  currency: string;
+  currency?: string;
   card_number: string;
   card_expiry: string;
   card_cvv: string;
   reference: string;
   customer_name?: string;
   customer_email?: string;
+  customer_ip?: string;
   capture?: boolean;
 }
 
@@ -23,9 +24,9 @@ interface PaymentRequestBody {
   card_cvv: string;
   reference: string;
   customer_ip: string;
-  card_holder?: string;
+  customer_name?: string;
   customer_email?: string;
-  capture: boolean;
+  capture?: boolean;
 }
 
 // Define response interface
@@ -34,15 +35,31 @@ interface FatZebraPaymentResponse {
   errors?: string[];
   response: {
     id: string;
+    card_number: string;
+    card_holder: string;
+    card_expiry: string;
     card_token: string;
+    card_type: string;
+    card_category: string;
+    card_subcategory: string;
     amount: number;
-    reference: string;
+    decimal_amount: number;
+    successful: boolean;
     message: string;
-    authorization: string;
+    reference: string;
     currency: string;
-    captured_at?: string;
-    created_at: string;
+    transaction_id: string;
+    settlement_date: string;
+    transaction_date: string;
+    response_code: string;
+    captured: boolean;
+    captured_amount: number;
+    rrn: string;
+    cvv_match: string;
+    metadata: Record<string, string>;
+    addendum_data: Record<string, any>;
   };
+  test: boolean;
 }
 
 class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
@@ -50,9 +67,9 @@ class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
   description = "Process a credit card payment using the Fat Zebra payment gateway";
   
   // Fat Zebra API configuration
-  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com/v1.0";
-  private username = process.env.FAT_ZEBRA_USERNAME;
-  private token = process.env.FAT_ZEBRA_TOKEN;
+  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com.au/v1.0";
+  private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
+  private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
   
   schema = {
     amount: {
@@ -60,7 +77,7 @@ class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
       description: "The amount to charge in cents (e.g., 1000 for $10.00)",
     },
     currency: {
-      type: z.string(),
+      type: z.string().default("AUD"),
       description: "The three-letter ISO currency code (default: AUD)",
     },
     card_number: {
@@ -69,7 +86,7 @@ class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
     },
     card_expiry: {
       type: z.string(),
-      description: "The card expiry date in the format MM/YY (e.g., 12/25)",
+      description: "The card expiry date in the format MM/YYYY (e.g., 12/2025)",
     },
     card_cvv: {
       type: z.string(),
@@ -87,6 +104,10 @@ class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
       type: z.string().email().optional(),
       description: "The customer's email address (optional)",
     },
+    customer_ip: {
+      type: z.string().optional().default("127.0.0.1"),
+      description: "The customer's IP address (optional, defaults to 127.0.0.1)",
+    },
     capture: {
       type: z.boolean().default(true),
       description: "Whether to capture the payment immediately (default: true)",
@@ -94,26 +115,22 @@ class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
   };
 
   async execute(input: FatZebraPaymentInput) {
-    if (!this.username || !this.token) {
-      throw new Error("Fat Zebra API credentials not configured. Please set FAT_ZEBRA_USERNAME and FAT_ZEBRA_TOKEN environment variables.");
-    }
-
     try {
       // Prepare the request body for the Fat Zebra API
       const requestBody: PaymentRequestBody = {
         amount: input.amount,
-        currency: input.currency,
+        currency: input.currency || "AUD",
         card_number: input.card_number,
         card_expiry: input.card_expiry,
         card_cvv: input.card_cvv,
         reference: input.reference,
-        customer_ip: "127.0.0.1", // This should ideally be the customer's actual IP
+        customer_ip: input.customer_ip || "127.0.0.1",
         capture: input.capture ?? true,
       };
 
       // Add optional fields if provided
       if (input.customer_name) {
-        requestBody.card_holder = input.customer_name;
+        requestBody.customer_name = input.customer_name;
       }
 
       if (input.customer_email) {
@@ -134,24 +151,32 @@ class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
 
       // Check if the response was successful
       if (!data.successful) {
-        throw new Error(`Fat Zebra API error: ${data.errors?.join(', ') || 'Unknown error'}`);
+        // Return the error response directly instead of throwing
+        return {
+          successful: false,
+          errors: data.errors || ["Unknown error from Fat Zebra API"]
+        };
       }
 
       // Return the response from Fat Zebra
       return {
         successful: data.successful,
-        transaction_id: data.response.id,
+        transaction_id: data.response.transaction_id,
         card_token: data.response.card_token,
         amount: data.response.amount,
         reference: data.response.reference,
         message: data.response.message,
-        authorization: data.response.authorization,
+        authorization: data.response.response_code,
         currency: data.response.currency,
-        timestamp: data.response.captured_at || data.response.created_at,
+        timestamp: data.response.transaction_date,
       };
     } catch (error) {
       console.error('Error processing payment:', error);
-      throw new Error(`Failed to process payment: ${error instanceof Error ? error.message : String(error)}`);
+      // Return error as a response instead of throwing
+      return {
+        successful: false,
+        errors: [(error instanceof Error ? error.message : String(error))]
+      };
     }
   }
 }

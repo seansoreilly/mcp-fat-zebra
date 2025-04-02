@@ -35,9 +35,9 @@ npm run build
 
 Set the following environment variables before starting the server:
 
-- `FAT_ZEBRA_USERNAME`: Your Fat Zebra username
-- `FAT_ZEBRA_TOKEN`: Your Fat Zebra API token
-- `FAT_ZEBRA_API_URL` (optional): Fat Zebra API URL (defaults to sandbox: https://gateway.sandbox.fatzebra.com/v1.0)
+- `FAT_ZEBRA_USERNAME`: Your Fat Zebra username (defaults to "TEST" for sandbox testing)
+- `FAT_ZEBRA_TOKEN`: Your Fat Zebra API token (defaults to "TEST" for sandbox testing)
+- `FAT_ZEBRA_API_URL` (optional): Fat Zebra API URL (defaults to sandbox: https://gateway.sandbox.fatzebra.com.au/v1.0)
 
 Example:
 
@@ -50,6 +50,8 @@ For production:
 
 ```bash
 export FAT_ZEBRA_API_URL=https://gateway.fatzebra.com/v1.0
+export FAT_ZEBRA_USERNAME=your-production-username
+export FAT_ZEBRA_TOKEN=your-production-token
 ```
 
 ### Running the server
@@ -68,13 +70,14 @@ Process a direct credit card payment.
 // Example usage
 const result = await client.call("fat_zebra_payment", {
   amount: 1000, // $10.00
-  currency: "AUD",
+  currency: "AUD", // Optional, defaults to "AUD" if not specified
   card_number: "4111111111111111",
-  card_expiry: "12/25",
+  card_expiry: "12/2025",
   card_cvv: "123",
   reference: "ORDER-123",
-  customer_name: "John Smith",
-  customer_email: "john@example.com",
+  customer_name: "John Smith", // Optional
+  customer_email: "john@example.com", // Optional
+  customer_ip: "127.0.0.1", // Optional, defaults to "127.0.0.1"
 });
 ```
 
@@ -86,7 +89,7 @@ Tokenize a credit card for future use.
 // Example usage
 const result = await client.call("fat_zebra_tokenize", {
   card_number: "4111111111111111",
-  card_expiry: "12/25",
+  card_expiry: "12/2025",
   card_cvv: "123",
   card_holder: "John Smith",
 });
@@ -104,6 +107,9 @@ const result = await client.call("fat_zebra_token_payment", {
   card_token: "card-token-from-tokenization",
   reference: "ORDER-124",
   cvv: "123", // Optional for token payments
+  customer_name: "John Smith", // Optional
+  customer_email: "john@example.com", // Optional
+  customer_ip: "127.0.0.1", // Optional, defaults to "127.0.0.1"
 });
 ```
 
@@ -125,7 +131,7 @@ const result = await client.call("fat_zebra_refund", {
 Fat Zebra provides a sandbox environment and test cards for development:
 
 - Test Card: 4111 1111 1111 1111
-- Expiry: Any future date (e.g., 12/25)
+- Expiry: Any future date (e.g., 12/2025)
 - CVV: Any 3-digit number (e.g., 123)
 
 For more test cases, refer to the [Fat Zebra documentation](https://docs.fatzebra.com/).

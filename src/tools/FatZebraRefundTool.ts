@@ -35,9 +35,9 @@ class FatZebraRefundTool extends MCPTool<FatZebraRefundInput> {
   description = "Process a refund for a previous transaction using the Fat Zebra payment gateway";
   
   // Fat Zebra API configuration
-  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com/v1.0";
-  private username = process.env.FAT_ZEBRA_USERNAME;
-  private token = process.env.FAT_ZEBRA_TOKEN;
+  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com.au/v1.0";
+  private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
+  private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
   
   schema = {
     transaction_id: {
@@ -55,10 +55,6 @@ class FatZebraRefundTool extends MCPTool<FatZebraRefundInput> {
   };
 
   async execute(input: FatZebraRefundInput) {
-    if (!this.username || !this.token) {
-      throw new Error("Fat Zebra API credentials not configured. Please set FAT_ZEBRA_USERNAME and FAT_ZEBRA_TOKEN environment variables.");
-    }
-
     try {
       // Prepare the request body for the Fat Zebra API
       const requestBody: RefundRequestBody = {
@@ -81,7 +77,11 @@ class FatZebraRefundTool extends MCPTool<FatZebraRefundInput> {
 
       // Check if the response was successful
       if (!data.successful) {
-        throw new Error(`Fat Zebra API error: ${data.errors?.join(', ') || 'Unknown error'}`);
+        // Return the error response directly instead of throwing
+        return {
+          successful: false,
+          errors: data.errors || ["Unknown error from Fat Zebra API"]
+        };
       }
 
       // Return the response from Fat Zebra
@@ -97,7 +97,11 @@ class FatZebraRefundTool extends MCPTool<FatZebraRefundInput> {
       };
     } catch (error) {
       console.error('Error processing refund:', error);
-      throw new Error(`Failed to process refund: ${error instanceof Error ? error.message : String(error)}`);
+      // Return error as a response instead of throwing
+      return {
+        successful: false,
+        errors: [(error instanceof Error ? error.message : String(error))]
+      };
     }
   }
 }
