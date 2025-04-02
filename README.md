@@ -1,6 +1,6 @@
 # MCP Fat Zebra Integration
 
-This is an MCP (Multi-Channel Payments) server that provides integration with the [Fat Zebra](https://docs.fatzebra.com/) payment gateway.
+This is an MCP (Model Context Protocol) server that provides integration with the [Fat Zebra](https://docs.fatzebra.com/) payment gateway.
 
 ## Features
 
