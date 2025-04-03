@@ -40,9 +40,11 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
   private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
   
-  // Default test card that works with Fat Zebra
-  private defaultTestCard = "5123456789012346";
+  // Default test card that works with Fat Zebra - using the one reported to work consistently
+  private defaultTestCard = "4111111111111111";
   private defaultExpiryDate = "05/2026";
+  private defaultCVV = "123";
+  private defaultCardHolder = "Test User";
   
   schema = {
     card_number: {
@@ -73,20 +75,19 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
       const cardExpiry = this.username === "TEST" && cardNumber === this.defaultTestCard ? 
         this.defaultExpiryDate : input.card_expiry;
       
+      // Always ensure CVV is provided
+      const cardCVV = input.card_cvv || this.defaultCVV;
+      
+      // Always provide a card holder name
+      const cardHolder = input.card_holder || this.defaultCardHolder;
+      
       // Prepare the request body for the Fat Zebra API
       const requestBody: TokenizeRequestBody = {
         card_number: cardNumber,
         card_expiry: cardExpiry,
+        card_cvv: cardCVV,
+        card_holder: cardHolder
       };
-
-      // Add optional fields if provided
-      if (input.card_cvv) {
-        requestBody.card_cvv = input.card_cvv;
-      }
-
-      if (input.card_holder) {
-        requestBody.card_holder = input.card_holder;
-      }
 
       // Make the request to the Fat Zebra API
       const response = await fetch(`${this.baseUrl}/credit_cards`, {

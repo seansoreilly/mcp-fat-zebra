@@ -71,9 +71,11 @@ class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
   private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
   
-  // Default test card that works with Fat Zebra
-  private defaultTestCard = "5123456789012346";
+  // Default test card that works with Fat Zebra - using the one reported to work consistently
+  private defaultTestCard = "4111111111111111";
   private defaultExpiryDate = "05/2026";
+  private defaultCVV = "123";
+  private defaultCardHolder = "Test User";
   
   schema = {
     amount: {
@@ -128,28 +130,31 @@ class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
       const cardExpiry = this.username === "TEST" && cardNumber === this.defaultTestCard ? 
         this.defaultExpiryDate : input.card_expiry;
       
-      // Prepare the request body for the Fat Zebra API - only include essential parameters
+      // Always ensure CVV is provided - required by Fat Zebra
+      const cardCVV = input.card_cvv || this.defaultCVV;
+      
+      // Always ensure card_holder is provided as Fat Zebra requires it
+      const customerName = input.customer_name || this.defaultCardHolder;
+      
+      // Create a simple reference if none provided
+      const reference = input.reference || `ref-${Date.now()}`;
+      
+      // Prepare the request body for the Fat Zebra API
       const requestBody: PaymentRequestBody = {
         amount: input.amount,
         card_number: cardNumber,
         card_expiry: cardExpiry,
-        card_cvv: input.card_cvv,
-        reference: input.reference,
+        card_cvv: cardCVV,
+        reference: reference,
+        customer_name: customerName, // Always include card holder name
+        currency: input.currency || "AUD", // Always include currency
       };
 
-      // Only add non-essential parameters if they're provided
-      if (input.currency) {
-        requestBody.currency = input.currency;
-      }
-      
+      // Add optional fields only if provided
       if (input.customer_ip) {
         requestBody.customer_ip = input.customer_ip;
       }
       
-      if (input.customer_name) {
-        requestBody.customer_name = input.customer_name;
-      }
-
       if (input.customer_email) {
         requestBody.customer_email = input.customer_email;
       }
