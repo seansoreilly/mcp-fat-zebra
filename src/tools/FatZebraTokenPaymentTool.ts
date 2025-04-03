@@ -63,12 +63,12 @@ interface FatZebraPaymentResponse {
 class FatZebraTokenPaymentTool extends MCPTool<FatZebraTokenPaymentInput> {
   name = "fat_zebra_token_payment";
   description = "Process a payment using a tokenized card with the Fat Zebra payment gateway";
-  
+
   // Fat Zebra API configuration
   private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com.au/v1.0";
   private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
-  
+
   schema = {
     amount: {
       type: z.number().positive(),
@@ -121,7 +121,7 @@ class FatZebraTokenPaymentTool extends MCPTool<FatZebraTokenPaymentInput> {
       if (input.currency) {
         requestBody.currency = input.currency;
       }
-      
+
       if (input.cvv) {
         requestBody.cvv = input.cvv;
       }
@@ -129,7 +129,7 @@ class FatZebraTokenPaymentTool extends MCPTool<FatZebraTokenPaymentInput> {
       if (input.customer_ip) {
         requestBody.customer_ip = input.customer_ip;
       }
-      
+
       if (input.customer_name) {
         requestBody.customer_name = input.customer_name;
       }
@@ -137,7 +137,7 @@ class FatZebraTokenPaymentTool extends MCPTool<FatZebraTokenPaymentInput> {
       if (input.customer_email) {
         requestBody.customer_email = input.customer_email;
       }
-      
+
       if (input.capture !== undefined) {
         requestBody.capture = input.capture;
       }
