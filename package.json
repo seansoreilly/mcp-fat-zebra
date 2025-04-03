@@ -10,6 +10,7 @@
     "dist"
   ],
   "scripts": {
+    "clean": "rm -rf dist",
     "build": "tsc && mcp-build",
     "watch": "tsc --watch",
     "start": "node dist/index.js"

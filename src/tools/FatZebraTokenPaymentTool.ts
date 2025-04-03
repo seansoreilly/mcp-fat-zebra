@@ -7,8 +7,8 @@ interface FatZebraTokenPaymentInput {
   currency?: string;
   card_token: string;
   reference: string;
-  cvv?: string;
-  customer_name?: string;
+  cvv: string;
+  card_holder: string;
   customer_email?: string;
   customer_ip?: string;
   capture?: boolean;
@@ -21,8 +21,8 @@ interface TokenPaymentRequestBody {
   card_token: string;
   reference: string;
   customer_ip?: string;
-  cvv?: string;
-  customer_name?: string;
+  cvv: string;
+  card_holder: string;
   customer_email?: string;
   capture?: boolean;
 }
@@ -91,12 +91,12 @@ class FatZebraTokenPaymentTool extends MCPTool<FatZebraTokenPaymentInput> {
       description: "A unique reference for this transaction",
     },
     cvv: {
-      type: z.string().optional(),
-      description: "The card verification value (CVV/CVC) code (optional)",
+      type: z.string(),
+      description: "The card verification value (CVV/CVC) code (required)",
     },
-    customer_name: {
-      type: z.string().optional(),
-      description: "The customer's name (optional)",
+    card_holder: {
+      type: z.string(),
+      description: "The cardholder's name (required)",
     },
     customer_email: {
       type: z.string().email().optional(),
@@ -114,14 +114,15 @@ class FatZebraTokenPaymentTool extends MCPTool<FatZebraTokenPaymentInput> {
 
   async execute(input: FatZebraTokenPaymentInput) {
     try {
-      // Always ensure CVV is provided if possible - often required by Fat Zebra
+      // Always ensure CVV is provided - now required by interface
       const cvv = input.cvv || this.defaultCVV;
       
-      // Always ensure customer_name is provided (card_holder equivalent)
-      const customerName = input.customer_name || this.defaultCardHolder;
+      // Always ensure card_holder is provided - now required by interface
+      const cardHolder = input.card_holder || this.defaultCardHolder;
       
-      // Create a simple reference if none provided
-      const reference = input.reference || `ref-${Date.now()}`;
+      // Create a unique reference with timestamp AND random string to ensure uniqueness
+      const uniqueId = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+      const reference = input.reference || `token-${uniqueId}`;
       
       // Prepare the request body for the Fat Zebra API
       const requestBody: TokenPaymentRequestBody = {
@@ -129,7 +130,7 @@ class FatZebraTokenPaymentTool extends MCPTool<FatZebraTokenPaymentInput> {
         card_token: input.card_token,
         reference: reference,
         cvv: cvv,
-        customer_name: customerName,
+        card_holder: cardHolder,
         currency: input.currency || "AUD", // Always include currency
       };
 

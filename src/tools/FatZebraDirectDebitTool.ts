@@ -115,14 +115,19 @@ class FatZebraDirectDebitTool extends MCPTool<FatZebraDirectDebitInput> {
       const accountName = this.username === "TEST" && !input.account_name ? 
         this.defaultAccountName : input.account_name;
       
-      const bsb = this.username === "TEST" && !input.bsb ? 
-        this.defaultBSB : input.bsb;
+      // Format BSB correctly if needed (ensure XXX-XXX format)
+      let bsb = input.bsb || this.defaultBSB;
+      // If BSB doesn't contain a hyphen, format it as XXX-XXX
+      if (bsb && !bsb.includes('-')) {
+        bsb = bsb.length === 6 ? `${bsb.substring(0, 3)}-${bsb.substring(3)}` : bsb;
+      }
       
       const accountNumber = this.username === "TEST" && !input.account_number ? 
         this.defaultAccountNumber : input.account_number;
       
-      // Create a simple reference if none provided
-      const reference = input.reference || `ref-${Date.now()}`;
+      // Create a unique reference with timestamp AND random string to ensure uniqueness
+      const uniqueId = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+      const reference = input.reference || `dd-${uniqueId}`;
       
       // Truncate description to 18 characters if it's longer
       const description = input.description.length > 18 ? 

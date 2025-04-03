@@ -56,11 +56,15 @@ class FatZebraRefundTool extends MCPTool<FatZebraRefundInput> {
 
   async execute(input: FatZebraRefundInput) {
     try {
+      // Generate a unique reference if none was provided
+      const uniqueId = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+      const reference = input.reference || `refund-${uniqueId}`;
+
       // Prepare the request body for the Fat Zebra API
       const requestBody: RefundRequestBody = {
         transaction_id: input.transaction_id,
         amount: input.amount,
-        reference: input.reference,
+        reference: reference,
       };
 
       // Make the request to the Fat Zebra API

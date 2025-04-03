@@ -82,7 +82,7 @@ class FatZebra3DSecureTool extends MCPTool<FatZebra3DSecureInput> {
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
   
   // Default test card that works with Fat Zebra 3DS - using the one reported to work consistently
-  private defaultTestCard = "4111111111111111";
+  private defaultTestCard = "5123456789012346";
   private defaultExpiryDate = "05/2026";
   private defaultCVV = "123";
   private defaultCardHolder = "Test User";
@@ -150,8 +150,9 @@ class FatZebra3DSecureTool extends MCPTool<FatZebra3DSecureInput> {
       // Always ensure card_holder is provided
       const cardHolder = input.card_holder || this.defaultCardHolder;
       
-      // Create a unique reference number with timestamp to ensure uniqueness
-      const reference = input.reference || `3DS-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      // Create a unique reference number with timestamp AND UUID to ensure uniqueness
+      const uniqueId = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+      const reference = input.reference || `3DS-${uniqueId}`;
       
       // Prepare the request body for the Fat Zebra API
       const requestBody: ThreeDSRequestBody = {

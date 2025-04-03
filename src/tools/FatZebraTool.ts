@@ -9,7 +9,7 @@ interface FatZebraPaymentInput {
   card_expiry: string;
   card_cvv: string;
   reference: string;
-  customer_name?: string;
+  card_holder?: string;
   customer_email?: string;
   customer_ip?: string;
   capture?: boolean;
@@ -24,7 +24,7 @@ interface PaymentRequestBody {
   card_cvv: string;
   reference: string;
   customer_ip?: string;
-  customer_name?: string;
+  card_holder?: string;
   customer_email?: string;
   capture?: boolean;
 }
@@ -72,7 +72,7 @@ class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
   
   // Default test card that works with Fat Zebra - using the one reported to work consistently
-  private defaultTestCard = "4111111111111111";
+  private defaultTestCard = "5123456789012346";
   private defaultExpiryDate = "05/2026";
   private defaultCVV = "123";
   private defaultCardHolder = "Test User";
@@ -102,9 +102,9 @@ class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
       type: z.string(),
       description: "A unique reference for this transaction",
     },
-    customer_name: {
+    card_holder: {
       type: z.string().optional(),
-      description: "The customer's name (optional)",
+      description: "The cardholder's name (optional)",
     },
     customer_email: {
       type: z.string().email().optional(),
@@ -134,7 +134,7 @@ class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
       const cardCVV = input.card_cvv || this.defaultCVV;
       
       // Always ensure card_holder is provided as Fat Zebra requires it
-      const customerName = input.customer_name || this.defaultCardHolder;
+      const cardHolder = input.card_holder || this.defaultCardHolder;
       
       // Create a simple reference if none provided
       const reference = input.reference || `ref-${Date.now()}`;
@@ -146,8 +146,8 @@ class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
         card_expiry: cardExpiry,
         card_cvv: cardCVV,
         reference: reference,
-        customer_name: customerName, // Always include card holder name
-        currency: input.currency || "AUD", // Always include currency
+        card_holder: cardHolder,
+        currency: input.currency || "AUD",
       };
 
       // Add optional fields only if provided

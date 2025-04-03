@@ -8,7 +8,6 @@ import FatZebraTokenizeTool from "./tools/FatZebraTokenizeTool.js";
 import FatZebraTokenPaymentTool from "./tools/FatZebraTokenPaymentTool.js";
 import FatZebraRefundTool from "./tools/FatZebraRefundTool.js";
 import FatZebra3DSecureTool from "./tools/FatZebra3DSecureTool.js";
-import FatZebraWebhookTool from "./tools/FatZebraWebhookTool.js";
 import FatZebraDirectDebitTool from "./tools/FatZebraDirectDebitTool.js";
 import DocumentationResource from "./tools/DocumentationResource.js";
 

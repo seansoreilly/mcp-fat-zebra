@@ -5,16 +5,16 @@ import fetch from "node-fetch";
 interface FatZebraTokenizeInput {
   card_number: string;
   card_expiry: string;
-  card_cvv?: string;
-  card_holder?: string;
+  card_cvv: string;
+  card_holder: string;
 }
 
 // Define request body interface with all possible properties
 interface TokenizeRequestBody {
   card_number: string;
   card_expiry: string;
-  card_cvv?: string;
-  card_holder?: string;
+  card_cvv: string;
+  card_holder: string;
 }
 
 // Define response interface
@@ -41,7 +41,7 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
   
   // Default test card that works with Fat Zebra - using the one reported to work consistently
-  private defaultTestCard = "4111111111111111";
+  private defaultTestCard = "5123456789012346";
   private defaultExpiryDate = "05/2026";
   private defaultCVV = "123";
   private defaultCardHolder = "Test User";
@@ -56,12 +56,12 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
       description: "The card expiry date in the format MM/YYYY (e.g., 05/2026)",
     },
     card_cvv: {
-      type: z.string().optional(),
-      description: "The card verification value (CVV/CVC) code (optional)",
+      type: z.string(),
+      description: "The card verification value (CVV/CVC) code (required)",
     },
     card_holder: {
-      type: z.string().optional(),
-      description: "The name of the cardholder (optional)",
+      type: z.string(),
+      description: "The name of the cardholder (required)",
     }
   };
 
@@ -75,10 +75,10 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
       const cardExpiry = this.username === "TEST" && cardNumber === this.defaultTestCard ? 
         this.defaultExpiryDate : input.card_expiry;
       
-      // Always ensure CVV is provided
+      // Always ensure CVV is provided - now required by interface
       const cardCVV = input.card_cvv || this.defaultCVV;
       
-      // Always provide a card holder name
+      // Always provide a card holder name - now required by interface
       const cardHolder = input.card_holder || this.defaultCardHolder;
       
       // Prepare the request body for the Fat Zebra API
