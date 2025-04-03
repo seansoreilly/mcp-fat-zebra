@@ -10,13 +10,14 @@ import FatZebraRefundTool from "./tools/FatZebraRefundTool.js";
 import FatZebra3DSecureTool from "./tools/FatZebra3DSecureTool.js";
 import FatZebraWebhookTool from "./tools/FatZebraWebhookTool.js";
 import FatZebraDirectDebitTool from "./tools/FatZebraDirectDebitTool.js";
+import DocumentationResource from "./tools/DocumentationResource.js";
 
 process.stderr.write("[INFO] Starting MCP Fat Zebra server...\n");
 
 // Create the MCP server instance
 const server = new MCPServer();
 
-// The MCP Framework automatically discovers and loads tools
+// The MCP Framework automatically discovers and loads tools and resources
 // from the tools directory when the server starts
 
 // Start the server
