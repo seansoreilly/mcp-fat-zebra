@@ -34,18 +34,18 @@ interface FatZebraTokenizeResponse {
 class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
   name = "fat_zebra_tokenize";
   description = "Tokenize a credit card using the Fat Zebra payment gateway";
-  
+
   // Fat Zebra API configuration
   private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com.au/v1.0";
   private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
-  
+
   // Default test card that works with Fat Zebra - using the one reported to work consistently
   private defaultTestCard = "5123456789012346";
   private defaultExpiryDate = "05/2026";
   private defaultCVV = "123";
   private defaultCardHolder = "Test User";
-  
+
   schema = {
     card_number: {
       type: z.string(),
@@ -68,19 +68,19 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
   async execute(input: FatZebraTokenizeInput) {
     try {
       // Use the successful test card if we're in test mode and no card is provided
-      const cardNumber = this.username === "TEST" && !input.card_number ? 
+      const cardNumber = this.username === "TEST" && !input.card_number ?
         this.defaultTestCard : input.card_number;
-      
+
       // Use the successful expiry date if we're in test mode and using the default test card
-      const cardExpiry = this.username === "TEST" && cardNumber === this.defaultTestCard ? 
+      const cardExpiry = this.username === "TEST" && cardNumber === this.defaultTestCard ?
         this.defaultExpiryDate : input.card_expiry;
-      
+
       // Always ensure CVV is provided - now required by interface
       const cardCVV = input.card_cvv || this.defaultCVV;
-      
+
       // Always provide a card holder name - now required by interface
       const cardHolder = input.card_holder || this.defaultCardHolder;
-      
+
       // Prepare the request body for the Fat Zebra API
       const requestBody: TokenizeRequestBody = {
         card_number: cardNumber,

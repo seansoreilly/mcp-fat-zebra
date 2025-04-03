@@ -68,7 +68,7 @@ class FatZebraTokenPaymentTool extends MCPTool<FatZebraTokenPaymentInput> {
   private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com.au/v1.0";
   private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
-  
+
   // Default values to ensure API acceptance
   private defaultCardHolder = "Test User";
   private defaultCVV = "123";
@@ -116,14 +116,14 @@ class FatZebraTokenPaymentTool extends MCPTool<FatZebraTokenPaymentInput> {
     try {
       // Always ensure CVV is provided - now required by interface
       const cvv = input.cvv || this.defaultCVV;
-      
+
       // Always ensure card_holder is provided - now required by interface
       const cardHolder = input.card_holder || this.defaultCardHolder;
-      
+
       // Create a unique reference with timestamp AND random string to ensure uniqueness
       const uniqueId = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
       const reference = input.reference || `token-${uniqueId}`;
-      
+
       // Prepare the request body for the Fat Zebra API
       const requestBody: TokenPaymentRequestBody = {
         amount: input.amount,
