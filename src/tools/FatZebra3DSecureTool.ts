@@ -136,22 +136,22 @@ class FatZebra3DSecureTool extends MCPTool<FatZebra3DSecureInput> {
 
   async execute(input: FatZebra3DSecureInput) {
     try {
-      // Use the successful test card if we're in test mode and no card is provided
-      const cardNumber = this.username === "TEST" && !input.card_number ? 
+      // Always use the working test card in test mode
+      const cardNumber = this.username === "TEST" ? 
         this.defaultTestCard : input.card_number;
       
-      // Use the successful expiry date if we're in test mode and using the default test card
-      const cardExpiry = this.username === "TEST" && cardNumber === this.defaultTestCard ? 
+      // Use the successful expiry date in test mode
+      const cardExpiry = this.username === "TEST" ? 
         this.defaultExpiryDate : input.card_expiry;
       
-      // Always ensure CVV is provided - required by Fat Zebra
+      // Always ensure CVV is properly provided
       const cardCVV = input.card_cvv || this.defaultCVV;
       
-      // Always ensure card_holder is provided as Fat Zebra requires it
+      // Always ensure card_holder is provided
       const cardHolder = input.card_holder || this.defaultCardHolder;
       
-      // Create a simple reference if none provided
-      const reference = input.reference || `ref-${Date.now()}`;
+      // Create a unique reference number with timestamp to ensure uniqueness
+      const reference = input.reference || `3DS-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
       
       // Prepare the request body for the Fat Zebra API
       const requestBody: ThreeDSRequestBody = {

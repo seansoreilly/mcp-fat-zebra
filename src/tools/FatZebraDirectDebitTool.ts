@@ -72,8 +72,8 @@ class FatZebraDirectDebitTool extends MCPTool<FatZebraDirectDebitInput> {
       description: "The amount to debit in cents (e.g., 1000 for $10.00)",
     },
     description: {
-      type: z.string(),
-      description: "A description of the direct debit transaction",
+      type: z.string().max(18),
+      description: "A description of the direct debit transaction (maximum 18 characters)",
     },
     reference: {
       type: z.string(),
@@ -124,10 +124,15 @@ class FatZebraDirectDebitTool extends MCPTool<FatZebraDirectDebitInput> {
       // Create a simple reference if none provided
       const reference = input.reference || `ref-${Date.now()}`;
       
+      // Truncate description to 18 characters if it's longer
+      const description = input.description.length > 18 ? 
+        input.description.substring(0, 18) : 
+        input.description;
+      
       // Prepare the request body for the Fat Zebra API
       const requestBody: DirectDebitRequestBody = {
         amount: input.amount,
-        description: input.description,
+        description: description,
         reference: reference,
         account_name: accountName,
         bsb: bsb,
