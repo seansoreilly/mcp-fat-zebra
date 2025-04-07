@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  fatzebra-mcp:
+    build:
+      context: .
+    container_name: fatzebra-mcp
+    environment:
+      - FAT_ZEBRA_API_URL=https://gateway.sandbox.fatzebra.com.au/v1.0
+      - FAT_ZEBRA_USERNAME=TEST
+      - FAT_ZEBRA_TOKEN=TEST
+      - FAT_ZEBRA_API_KEY=TEST
+      - FAT_ZEBRA_MERCHANT_ID=TEST
+      - NODE_ENV=development
+      - MCP_TRANSPORT=stdio
+    volumes:
+      - ./src:/app/src
+      - ./dist:/app/dist
+    restart: unless-stopped
+    command: node dist/index.js
+
+  nginx:
+    image: nginx:alpine
+    container_name: mcp-nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "3000:80"
+    depends_on:
+      - fatzebra-mcp
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  fast-agent:
+    build:
+      context: ../fast-agent-fz
+    container_name: fast-agent-fz
+    environment:
+      - FAT_ZEBRA_API_URL=https://gateway.sandbox.fatzebra.com.au/v1.0
+      - FAT_ZEBRA_USERNAME=TEST
+      - FAT_ZEBRA_TOKEN=TEST
+      - FAT_ZEBRA_API_KEY=TEST
+      - FAT_ZEBRA_MERCHANT_ID=TEST
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-default_api_key}
+    volumes:
+      - ../fast-agent-fz:/app
+      - ./:/app/mcp-fat-zebra
+    depends_on:
+      - nginx
+    ports:
+      - "8000:8000"
+    restart: unless-stopped

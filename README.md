@@ -60,6 +60,53 @@ export FAT_ZEBRA_TOKEN=your-production-token
 npm start
 ```
 
+## Docker Deployment
+
+You can easily deploy this service using Docker and Docker Compose:
+
+1. Make sure Docker and Docker Compose are installed on your system
+
+2. Run the services:
+
+```bash
+docker-compose up -d
+```
+
+This will start:
+
+- The Fat Zebra MCP server (fatzebra-mcp)
+- NGINX proxy with health endpoint (mcp-nginx) on port 3000
+- The FastAgent service (fast-agent-fz) on port 8000
+
+The architecture uses NGINX as a reverse proxy that provides:
+
+- Health checks at http://localhost:3000/health
+- Proxying to the MCP server at /mcp endpoint
+- Connection between the FastAgent and MCP server
+
+To verify everything is working:
+
+```bash
+# Check the health endpoint
+curl http://localhost:3000/health
+
+# View container status
+docker ps
+
+# View logs for each service
+docker logs fatzebra-mcp
+docker logs mcp-nginx
+docker logs fast-agent-fz
+```
+
+To stop the services:
+
+```bash
+docker-compose down
+```
+
+For development, the Docker setup includes volume mounts so that code changes are reflected immediately.
+
 ## Available Tools
 
 ### 1. Credit Card Payment
