@@ -147,3 +147,93 @@ The project uses the following configuration files:
 ## License
 
 See the LICENSE file for details.
+
+# Fat Zebra Agent Docker
+
+This repository contains a Docker setup that integrates the mcp-fat-zebra MCP server with the fast-agent-fz Python agent.
+
+## Prerequisites
+
+- Docker and Docker Compose installed
+- PowerShell 7 (for Windows users)
+- Anthropic API key
+
+## Getting Started
+
+1. Clone this repository:
+
+```
+git clone https://github.com/yourusername/fast-agent-fz-docker.git
+cd fast-agent-fz-docker
+```
+
+2. Run the start script to create necessary files and start the Docker container:
+
+```powershell
+./start.ps1
+```
+
+3. The first time you run the script, it will create a `.env` file. Edit this file to add your Anthropic API key:
+
+```
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+```
+
+4. Run the start script again to build and start the container:
+
+```powershell
+./start.ps1
+```
+
+5. Access the Fat Zebra Agent UI at: http://localhost:7860
+
+## Testing
+
+To run automated Playwright tests against the running Docker container:
+
+```powershell
+./test.ps1
+```
+
+The first time you run this script, it will:
+
+1. Install Playwright if needed
+2. Create a sample test in the tests directory
+3. Run the test against the deployed Docker container
+
+## Structure
+
+The Docker container runs two services:
+
+- **MCP Server (mcp-fat-zebra)**: A Node.js server providing MCP services
+- **Fast Agent (fast-agent-fz)**: A Python Gradio app that connects to the MCP server
+
+## Configuration
+
+The configuration for the Fast Agent is generated automatically in the container. You can modify the Dockerfile or docker-compose.yml to customize the configuration.
+
+## Logs
+
+Logs are stored in the `logs` directory which is mounted as a volume in the Docker container.
+
+## Stopping the Container
+
+To stop the container:
+
+```powershell
+docker-compose down
+```
+
+## Troubleshooting
+
+If you encounter issues:
+
+1. Check the logs:
+
+```powershell
+docker-compose logs
+```
+
+2. Make sure you've set your Anthropic API key in the `.env` file
+
+3. If the MCP server fails to start, you may need to check if port 7860 is already in use on your system.
