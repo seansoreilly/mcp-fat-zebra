@@ -6,14 +6,16 @@ interface FatZebraCreateCustomerInput {
   first_name: string;
   last_name: string;
   reference: string;
-  email: string;
-  card_holder?: string;
-  card_number?: string;
-  card_expiry?: string;
-  cvv?: string;
-  card_token?: string;
+  email_address: string;
+  ip_address?: string;
+  card: {
+    card_holder: string;
+    card_number: string;
+    expiry_date: string;
+    cvv: string;
+  };
   address: {
-    line1: string;
+    address: string;
     city: string;
     state: string;
     postcode: string;
@@ -48,33 +50,26 @@ class FatZebraCreateCustomerTool extends MCPTool<FatZebraCreateCustomerInput> {
       type: z.string(),
       description: "A unique reference for the customer.",
     },
-    email: {
+    email_address: {
       type: z.string().email(),
       description: "The customer's email address.",
     },
-    card_holder: {
+    ip_address: {
       type: z.string().optional(),
-      description: "The name on the customer's card.",
+      description: "The customer's IP address.",
     },
-    card_number: {
-      type: z.string().optional(),
-      description: "The customer's card number.",
-    },
-    card_expiry: {
-      type: z.string().optional(),
-      description: "The expiry date of the card in MM/YYYY format.",
-    },
-    cvv: {
-      type: z.string().optional(),
-      description: "The card's CVV.",
-    },
-    card_token: {
-      type: z.string().optional(),
-      description: "A card token can be sent in lieu of card details.",
+    card: {
+      type: z.object({
+        card_holder: z.string(),
+        card_number: z.string(),
+        expiry_date: z.string(),
+        cvv: z.string(),
+      }),
+      description: "The customer's card details.",
     },
     address: {
       type: z.object({
-        line1: z.string(),
+        address: z.string(),
         city: z.string(),
         state: z.string(),
         postcode: z.string(),
@@ -86,21 +81,6 @@ class FatZebraCreateCustomerTool extends MCPTool<FatZebraCreateCustomerInput> {
 
   async execute(input: FatZebraCreateCustomerInput) {
     try {
-      const requestBody: any = {
-        first_name: input.first_name,
-        last_name: input.last_name,
-        reference: input.reference,
-        email: input.email,
-        address: input.address,
-      };
-      if (input.card_token) {
-        requestBody.card_token = input.card_token;
-      } else {
-        requestBody.card_holder = input.card_holder;
-        requestBody.card_number = input.card_number;
-        requestBody.card_expiry = input.card_expiry;
-        requestBody.cvv = input.cvv;
-      }
       const url = `${this.baseUrl}/customers`;
       const response = await fetch(url, {
         method: 'POST',
@@ -108,7 +88,7 @@ class FatZebraCreateCustomerTool extends MCPTool<FatZebraCreateCustomerInput> {
           'Content-Type': 'application/json',
           'Authorization': `Basic ${Buffer.from(`${this.username}:${this.token}`).toString('base64')}`,
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(input),
       });
       let data: any;
       const contentType = response.headers.get('content-type');
