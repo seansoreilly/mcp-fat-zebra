@@ -100,7 +100,7 @@ class FatZebraTool extends MCPTool<FatZebraPaymentInput> {
     },
     reference: {
       type: z.string(),
-      description: "A unique reference for this transaction",
+      description: "A unique reference for this transaction.  If you are generating this reference, ensure it is unique by including 6 characters from a random GUID.",
     },
     card_holder: {
       type: z.string().optional(),
