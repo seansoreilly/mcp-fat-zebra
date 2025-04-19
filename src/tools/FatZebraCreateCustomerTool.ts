@@ -3,11 +3,22 @@ import { z } from "zod";
 import fetch from "node-fetch";
 
 interface FatZebraCreateCustomerInput {
+  first_name: string;
+  last_name: string;
+  reference: string;
   email: string;
-  name?: string;
-  address?: string;
-  phone?: string;
-  metadata?: Record<string, string>;
+  card_holder?: string;
+  card_number?: string;
+  card_expiry?: string;
+  cvv?: string;
+  card_token?: string;
+  address: {
+    line1: string;
+    city: string;
+    state: string;
+    postcode: string;
+    country: string;
+  };
 }
 
 interface FatZebraCreateCustomerResponse {
@@ -25,37 +36,71 @@ class FatZebraCreateCustomerTool extends MCPTool<FatZebraCreateCustomerInput> {
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
 
   schema = {
+    first_name: {
+      type: z.string(),
+      description: "The customer's first name.",
+    },
+    last_name: {
+      type: z.string(),
+      description: "The customer's last name.",
+    },
+    reference: {
+      type: z.string(),
+      description: "A unique reference for the customer.",
+    },
     email: {
       type: z.string().email(),
       description: "The customer's email address.",
     },
-    name: {
+    card_holder: {
       type: z.string().optional(),
-      description: "The customer's name.",
+      description: "The name on the customer's card.",
+    },
+    card_number: {
+      type: z.string().optional(),
+      description: "The customer's card number.",
+    },
+    card_expiry: {
+      type: z.string().optional(),
+      description: "The expiry date of the card in MM/YYYY format.",
+    },
+    cvv: {
+      type: z.string().optional(),
+      description: "The card's CVV.",
+    },
+    card_token: {
+      type: z.string().optional(),
+      description: "A card token can be sent in lieu of card details.",
     },
     address: {
-      type: z.string().optional(),
-      description: "The customer's address.",
-    },
-    phone: {
-      type: z.string().optional(),
-      description: "The customer's phone number.",
-    },
-    metadata: {
-      type: z.record(z.string()).optional(),
-      description: "Additional metadata for the customer.",
+      type: z.object({
+        line1: z.string(),
+        city: z.string(),
+        state: z.string(),
+        postcode: z.string(),
+        country: z.string(),
+      }),
+      description: "The customer's address details.",
     },
   };
 
   async execute(input: FatZebraCreateCustomerInput) {
     try {
       const requestBody: any = {
+        first_name: input.first_name,
+        last_name: input.last_name,
+        reference: input.reference,
         email: input.email,
+        address: input.address,
       };
-      if (input.name) requestBody.name = input.name;
-      if (input.address) requestBody.address = input.address;
-      if (input.phone) requestBody.phone = input.phone;
-      if (input.metadata) requestBody.metadata = input.metadata;
+      if (input.card_token) {
+        requestBody.card_token = input.card_token;
+      } else {
+        requestBody.card_holder = input.card_holder;
+        requestBody.card_number = input.card_number;
+        requestBody.card_expiry = input.card_expiry;
+        requestBody.cvv = input.cvv;
+      }
       const url = `${this.baseUrl}/customers`;
       const response = await fetch(url, {
         method: 'POST',
