@@ -2,36 +2,36 @@ import { MCPTool } from "mcp-framework";
 import { z } from "zod";
 import fetch from "node-fetch";
 
-interface FatZebraBatchDetailsInput {
-  batch_id: string;
+interface FatZebraTestWebhookInput {
+  id: string;
 }
 
-interface FatZebraBatchDetailsResponse {
+interface FatZebraTestWebhookResponse {
   successful: boolean;
   errors?: string[];
   response?: any;
 }
 
-class FatZebraBatchDetailsTool extends MCPTool<FatZebraBatchDetailsInput> {
-  name = "fat_zebra_batch_details";
-  description = "Retrieve details for a specific batch using the Fat Zebra payment gateway.";
+class FatZebraTestWebhookTool extends MCPTool<FatZebraTestWebhookInput> {
+  name = "fat_zebra_test_webhook";
+  description = "Trigger a test webhook event in Fat Zebra.";
 
   private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com.au/v1.0";
   private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
 
   schema = {
-    batch_id: {
+    id: {
       type: z.string(),
-      description: "The ID of the batch to retrieve details for.",
+      description: "The ID of the webhook to test.",
     },
   };
 
-  async execute(input: FatZebraBatchDetailsInput) {
+  async execute(input: FatZebraTestWebhookInput) {
     try {
-      const url = `${this.baseUrl}/batches/${encodeURIComponent(input.batch_id)}`;
+      const url = `${this.baseUrl}/webhooks/${encodeURIComponent(input.id)}/test`;
       const response = await fetch(url, {
-        method: 'GET',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Basic ${Buffer.from(`${this.username}:${this.token}`).toString('base64')}`,
@@ -48,4 +48,4 @@ class FatZebraBatchDetailsTool extends MCPTool<FatZebraBatchDetailsInput> {
   }
 }
 
-export default FatZebraBatchDetailsTool; 
+export default FatZebraTestWebhookTool; 

@@ -52,7 +52,7 @@ class FatZebraReconciliationReportTool extends MCPTool<FatZebraReconciliationRep
         }
         return { successful: true, response: text };
       } else {
-        const data = await response.json();
+        const data = await response.json() as any;
         if (!data.successful) {
           return { successful: false, errors: data.errors || ["Unknown error from Fat Zebra API"] };
         }

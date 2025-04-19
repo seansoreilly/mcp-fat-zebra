@@ -69,7 +69,7 @@ class FatZebraListBatchesTool extends MCPTool<FatZebraListBatchesInput> {
           'Authorization': `Basic ${Buffer.from(`${this.username}:${this.token}`).toString('base64')}`,
         },
       });
-      const data = await response.json();
+      const data = await response.json() as any;
       if (!data.successful) {
         return { successful: false, errors: data.errors || ["Unknown error from Fat Zebra API"] };
       }
