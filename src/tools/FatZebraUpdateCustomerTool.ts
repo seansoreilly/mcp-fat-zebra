@@ -1,0 +1,83 @@
+import { MCPTool } from "mcp-framework";
+import { z } from "zod";
+import fetch from "node-fetch";
+
+interface FatZebraUpdateCustomerInput {
+  customer_id: string;
+  email?: string;
+  name?: string;
+  address?: string;
+  phone?: string;
+  metadata?: Record<string, string>;
+}
+
+interface FatZebraUpdateCustomerResponse {
+  successful: boolean;
+  errors?: string[];
+  response?: any;
+}
+
+class FatZebraUpdateCustomerTool extends MCPTool<FatZebraUpdateCustomerInput> {
+  name = "fat_zebra_update_customer";
+  description = "Update customer details in Fat Zebra.";
+
+  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com.au/v1.0";
+  private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
+  private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
+
+  schema = {
+    customer_id: {
+      type: z.string(),
+      description: "The ID of the customer to update.",
+    },
+    email: {
+      type: z.string().email().optional(),
+      description: "The customer's email address.",
+    },
+    name: {
+      type: z.string().optional(),
+      description: "The customer's name.",
+    },
+    address: {
+      type: z.string().optional(),
+      description: "The customer's address.",
+    },
+    phone: {
+      type: z.string().optional(),
+      description: "The customer's phone number.",
+    },
+    metadata: {
+      type: z.record(z.string()).optional(),
+      description: "Additional metadata for the customer.",
+    },
+  };
+
+  async execute(input: FatZebraUpdateCustomerInput) {
+    try {
+      const requestBody: any = {};
+      if (input.email) requestBody.email = input.email;
+      if (input.name) requestBody.name = input.name;
+      if (input.address) requestBody.address = input.address;
+      if (input.phone) requestBody.phone = input.phone;
+      if (input.metadata) requestBody.metadata = input.metadata;
+      const url = `${this.baseUrl}/customers/${encodeURIComponent(input.customer_id)}`;
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${Buffer.from(`${this.username}:${this.token}`).toString('base64')}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+      const data = await response.json() as any;
+      if (!data.successful) {
+        return { successful: false, errors: data.errors || ["Unknown error from Fat Zebra API"] };
+      }
+      return { successful: true, response: data.response };
+    } catch (error) {
+      return { successful: false, errors: [(error instanceof Error ? error.message : String(error))] };
+    }
+  }
+}
+
+export default FatZebraUpdateCustomerTool; 
