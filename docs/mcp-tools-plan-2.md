@@ -45,7 +45,45 @@ This plan focuses on expanding the set of MCP tools that interact directly with 
 
 ### 5. General Fat Zebra Passthrough Tool
 
-- **fatzebra_passthrough**: Allow the MCP client to send any supported Fat Zebra API request (method, endpoint, body, headers) and receive the raw response. This enables advanced or future use cases without waiting for a dedicated tool implementation. Strict input validation and logging required for security.
+- **fatzebra_passthrough**: Allows the MCP client to send any supported Fat Zebra API request (method, endpoint, body, headers) and receive the raw response. This enables advanced or future use cases without waiting for a dedicated tool implementation.
+
+**Implementation Details:**
+
+- Inherits from `MCPTool` and uses `zod` for input validation.
+- Accepts the following input fields:
+  - `method`: One of `GET`, `POST`, `PUT`, `DELETE`, `PATCH` (required)
+  - `endpoint`: The Fat Zebra API endpoint (must start with `/`, e.g. `/purchases`) (required)
+  - `body`: JSON object for POST/PUT/PATCH requests (optional)
+  - `headers`: Additional headers to include (optional)
+- Merges user headers with required authentication and content-type headers.
+- Logs requests and responses with sensitive data redacted.
+- Returns the raw response and HTTP status code.
+- Strictly validates input to prevent directory traversal and other unsafe patterns.
+- Handles and reports errors robustly.
+
+**Example Usage:**
+
+```json
+{
+  "method": "POST",
+  "endpoint": "/purchases",
+  "body": {
+    "amount": 1000,
+    "currency": "AUD",
+    "card_number": "5123456789012346",
+    "card_expiry": "05/2026",
+    "card_cvv": "123",
+    "reference": "ref-123456"
+  }
+}
+```
+
+**Security Notes:**
+
+- Only allows requests to the configured Fat Zebra API base URL.
+- All inputs are validated and sanitized.
+- Sensitive data is redacted in logs and responses.
+- Intended for advanced use cases; prefer dedicated tools for common operations when possible.
 
 ## Best Practices for Fat Zebra Tool Implementation
 
