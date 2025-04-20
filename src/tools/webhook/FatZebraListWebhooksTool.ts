@@ -1,6 +1,7 @@
 import { MCPTool } from "mcp-framework";
 import { z } from "zod";
 import fetch from "node-fetch";
+import { checkWebhooksApiAvailability, getWebhooksApiUnavailableError } from "./FatZebraWebhookUtils";
 
 interface FatZebraListWebhooksInput {}
 
@@ -15,7 +16,8 @@ class FatZebraListWebhooksTool extends MCPTool<FatZebraListWebhooksInput> {
   name = "fat_zebra_list_webhooks";
   description = "List configured webhooks in Fat Zebra.";
 
-  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.pmnts-sandbox.io/v1.0";
+  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com.au/v1.0";
+  // Note: Webhooks might not be available in the sandbox environment
   private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
 
@@ -23,25 +25,27 @@ class FatZebraListWebhooksTool extends MCPTool<FatZebraListWebhooksInput> {
 
   async execute(input: FatZebraListWebhooksInput) {
     try {
-      // Try the documented webhooks endpoint
-      let endpoint = "/webhooks";
+      // First check if the webhooks API is available
+      const webhooksAvailable = await checkWebhooksApiAvailability(
+        this.baseUrl,
+        this.username,
+        this.token
+      );
       
-      console.log(`Making request to: ${this.baseUrl}${endpoint}`);
+      if (!webhooksAvailable) {
+        return getWebhooksApiUnavailableError();
+      }
       
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      // If we get here, the webhooks API is available
+      console.log(`Making request to list webhooks: ${this.baseUrl}/webhooks`);
+      
+      const response = await fetch(`${this.baseUrl}/webhooks`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
           'Authorization': `Basic ${Buffer.from(`${this.username}:${this.token}`).toString('base64')}`,
         },
       });
-      
-      if (response.status === 404) {
-        return { 
-          successful: false, 
-          errors: ["Webhook endpoint not found. This feature may not be available in the sandbox environment."] 
-        };
-      }
       
       const data = await response.json() as FatZebraApiResponse;
       
