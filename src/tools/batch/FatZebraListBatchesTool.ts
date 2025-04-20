@@ -11,6 +11,18 @@ interface FatZebraListBatchesInput {
   offset?: string;
 }
 
+// Define the interface for FatZebra API response
+interface FatZebraApiResponse {
+  successful: boolean;
+  response: any;
+  errors: string[];
+  test: boolean;
+  records: any[];
+  total_records: number;
+  page: number;
+  total_pages: number;
+}
+
 class FatZebraListBatchesTool extends MCPTool<FatZebraListBatchesInput> {
   name = "fat_zebra_list_batches";
   description = "List batches and their statuses using the Fat Zebra payment gateway.";
@@ -72,7 +84,7 @@ class FatZebraListBatchesTool extends MCPTool<FatZebraListBatchesInput> {
         },
       });
 
-      const data = await response.json();
+      const data = await response.json() as FatZebraApiResponse;
       
       // Return the response
       return {

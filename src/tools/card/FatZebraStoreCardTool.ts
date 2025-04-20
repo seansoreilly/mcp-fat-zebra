@@ -10,6 +10,19 @@ interface FatZebraStoreCardInput {
   customer_id?: string;
 }
 
+// Define interface for Fat Zebra API response
+interface FatZebraApiResponse {
+  successful: boolean;
+  errors?: string[];
+  response?: {
+    card_token?: string;
+    card_type?: string;
+    card_category?: string;
+    card_expiry?: string;
+    card_number?: string;
+  };
+}
+
 class FatZebraStoreCardTool extends MCPTool<FatZebraStoreCardInput> {
   name = "fat_zebra_store_card";
   description = "Store a card for future use (vault/tokenize) using the Fat Zebra payment gateway.";
@@ -73,7 +86,7 @@ class FatZebraStoreCardTool extends MCPTool<FatZebraStoreCardInput> {
         body: JSON.stringify(requestBody),
       });
 
-      const data = await response.json();
+      const data = await response.json() as FatZebraApiResponse;
       
       if (!data.successful) {
         return { 

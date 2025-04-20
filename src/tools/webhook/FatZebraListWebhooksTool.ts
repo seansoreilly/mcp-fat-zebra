@@ -4,6 +4,13 @@ import fetch from "node-fetch";
 
 interface FatZebraListWebhooksInput {}
 
+// Define interface for Fat Zebra API response
+interface FatZebraApiResponse {
+  successful: boolean;
+  errors?: string[];
+  response?: any;
+}
+
 class FatZebraListWebhooksTool extends MCPTool<FatZebraListWebhooksInput> {
   name = "fat_zebra_list_webhooks";
   description = "List configured webhooks in Fat Zebra.";
@@ -36,7 +43,7 @@ class FatZebraListWebhooksTool extends MCPTool<FatZebraListWebhooksInput> {
         };
       }
       
-      const data = await response.json();
+      const data = await response.json() as FatZebraApiResponse;
       
       if (!data.successful) {
         return { 

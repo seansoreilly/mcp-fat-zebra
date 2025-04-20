@@ -11,6 +11,18 @@ interface FatZebraSearchRefundsInput {
   offset?: string;
 }
 
+// Define the interface for FatZebra API response
+interface FatZebraApiResponse {
+  successful: boolean;
+  response: any;
+  errors: string[];
+  test: boolean;
+  records: any[];
+  total_records: number;
+  page: number;
+  total_pages: number;
+}
+
 class FatZebraSearchRefundsTool extends MCPTool<FatZebraSearchRefundsInput> {
   name = "fat_zebra_search_refunds";
   description = "Search for refunds by transaction or date using the Fat Zebra payment gateway.";
@@ -72,7 +84,7 @@ class FatZebraSearchRefundsTool extends MCPTool<FatZebraSearchRefundsInput> {
         },
       });
 
-      const data = await response.json();
+      const data = await response.json() as FatZebraApiResponse;
       
       // Return the response
       return {

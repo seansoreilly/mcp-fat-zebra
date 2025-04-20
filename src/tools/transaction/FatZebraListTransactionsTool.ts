@@ -12,6 +12,18 @@ interface FatZebraListTransactionsInput {
   offset?: string;
 }
 
+// Define the interface for FatZebra API response
+interface FatZebraApiResponse {
+  successful: boolean;
+  response: any;
+  errors: string[];
+  test: boolean;
+  records: any[];
+  total_records: number;
+  page: number;
+  total_pages: number;
+}
+
 class FatZebraListTransactionsTool extends MCPTool<FatZebraListTransactionsInput> {
   name = "fat_zebra_list_transactions";
   description = "List/search transactions with filters (date, status, amount, etc.) using the Fat Zebra payment gateway.";
@@ -78,7 +90,7 @@ class FatZebraListTransactionsTool extends MCPTool<FatZebraListTransactionsInput
         },
       });
 
-      const data = await response.json();
+      const data = await response.json() as FatZebraApiResponse;
       
       // Return the response
       return {
