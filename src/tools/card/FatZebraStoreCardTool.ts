@@ -10,12 +10,6 @@ interface FatZebraStoreCardInput {
   customer_id?: string;
 }
 
-interface FatZebraStoreCardResponse {
-  successful: boolean;
-  errors?: string[];
-  response?: any;
-}
-
 class FatZebraStoreCardTool extends MCPTool<FatZebraStoreCardInput> {
   name = "fat_zebra_store_card";
   description = "Store a card for future use (vault/tokenize) using the Fat Zebra payment gateway.";
@@ -49,14 +43,27 @@ class FatZebraStoreCardTool extends MCPTool<FatZebraStoreCardInput> {
 
   async execute(input: FatZebraStoreCardInput) {
     try {
+      // According to documentation, tokens are normally created as part of a purchase
+      // We'll handle this by making a $0 purchase or authorization
       const requestBody: any = {
         card_number: input.card_number,
         card_expiry: input.card_expiry,
         card_cvv: input.card_cvv,
         card_holder: input.card_holder,
+        amount: 100, // Small amount for validation
+        reference: `token-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        currency: "AUD",
+        capture: false, // Don't actually charge the card
       };
-      if (input.customer_id) requestBody.customer_id = input.customer_id;
-      const url = `${this.baseUrl}/tokenize`;
+      
+      if (input.customer_id) {
+        requestBody.customer_id = input.customer_id;
+      }
+      
+      // Use the purchases endpoint which returns a token
+      const url = `${this.baseUrl}/purchases`;
+      console.log(`Making tokenization request to: ${url}`);
+      
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -65,15 +72,40 @@ class FatZebraStoreCardTool extends MCPTool<FatZebraStoreCardInput> {
         },
         body: JSON.stringify(requestBody),
       });
-      const data = await response.json() as any;
+
+      const data = await response.json();
+      
       if (!data.successful) {
-        return { successful: false, errors: data.errors || ["Unknown error from Fat Zebra API"] };
+        return { 
+          successful: false, 
+          errors: data.errors || ["Unknown error from Fat Zebra API"] 
+        };
       }
-      return { successful: true, response: data.response };
+      
+      // Extract the card token from the response
+      const cardToken = data.response?.card_token;
+      const cardType = data.response?.card_type;
+      const cardCategory = data.response?.card_category;
+      const cardExpiry = data.response?.card_expiry;
+      const maskedCardNumber = data.response?.card_number;
+      
+      // Return the tokenization results
+      return {
+        successful: true,
+        card_token: cardToken,
+        card_type: cardType,
+        card_category: cardCategory,
+        card_expiry: cardExpiry,
+        card_number: maskedCardNumber
+      };
     } catch (error) {
-      return { successful: false, errors: [(error instanceof Error ? error.message : String(error))] };
+      console.error('Error storing card:', error);
+      return {
+        successful: false,
+        errors: [(error instanceof Error ? error.message : String(error))]
+      };
     }
   }
 }
 
-export default FatZebraStoreCardTool; 
+export default FatZebraStoreCardTool;

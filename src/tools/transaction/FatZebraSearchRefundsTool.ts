@@ -7,14 +7,8 @@ interface FatZebraSearchRefundsInput {
   from_date?: string; // YYYY-MM-DD
   to_date?: string;   // YYYY-MM-DD
   reference?: string;
-  limit?: number;
-  offset?: number;
-}
-
-interface FatZebraSearchRefundsResponse {
-  successful: boolean;
-  errors?: string[];
-  response?: any;
+  limit?: string;
+  offset?: string;
 }
 
 class FatZebraSearchRefundsTool extends MCPTool<FatZebraSearchRefundsInput> {
@@ -43,41 +37,62 @@ class FatZebraSearchRefundsTool extends MCPTool<FatZebraSearchRefundsInput> {
       description: "Reference to filter refunds by.",
     },
     limit: {
-      type: z.number().optional().default(20),
+      type: z.string().optional(),
       description: "Number of results to return (default: 20)",
     },
     offset: {
-      type: z.number().optional().default(0),
+      type: z.string().optional(),
       description: "Offset for pagination (default: 0)",
     },
   };
 
   async execute(input: FatZebraSearchRefundsInput) {
     try {
-      const params = new URLSearchParams();
-      if (input.transaction_id) params.append('transaction_id', input.transaction_id);
-      if (input.from_date) params.append('from', input.from_date);
-      if (input.to_date) params.append('to', input.to_date);
-      if (input.reference) params.append('reference', input.reference);
-      if (input.limit) params.append('limit', input.limit.toString());
-      if (input.offset) params.append('offset', input.offset.toString());
-      const url = `${this.baseUrl}/refunds?${params.toString()}`;
-      const response = await fetch(url, {
+      // Build the endpoint with query parameters
+      let endpoint = "/refunds";
+      const queryParams = [];
+      
+      if (input.transaction_id) queryParams.push(`transaction_id=${input.transaction_id}`);
+      if (input.from_date) queryParams.push(`from_date=${input.from_date}`);
+      if (input.to_date) queryParams.push(`to_date=${input.to_date}`);
+      if (input.reference) queryParams.push(`reference=${input.reference}`);
+      if (input.limit) queryParams.push(`limit=${input.limit}`);
+      if (input.offset) queryParams.push(`offset=${input.offset}`);
+      
+      if (queryParams.length > 0) {
+        endpoint += "?" + queryParams.join("&");
+      }
+      
+      // Make the request
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Basic ${Buffer.from(`${this.username}:${this.token}`).toString('base64')}`,
         },
       });
-      const data = await response.json() as any;
-      if (!data.successful) {
-        return { successful: false, errors: data.errors || ["Unknown error from Fat Zebra API"] };
-      }
-      return { successful: true, response: data.response };
+
+      const data = await response.json();
+      
+      // Return the response
+      return {
+        successful: data.successful,
+        response: data.response,
+        errors: data.errors,
+        test: data.test,
+        records: data.records,
+        total_records: data.total_records,
+        page: data.page,
+        total_pages: data.total_pages
+      };
     } catch (error) {
-      return { successful: false, errors: [(error instanceof Error ? error.message : String(error))] };
+      console.error('Error searching refunds:', error);
+      return {
+        successful: false,
+        errors: [(error instanceof Error ? error.message : String(error))]
+      };
     }
   }
 }
 
-export default FatZebraSearchRefundsTool; 
+export default FatZebraSearchRefundsTool;

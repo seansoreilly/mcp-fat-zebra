@@ -63,7 +63,7 @@ class FatZebraDirectDebitTool extends MCPTool<FatZebraDirectDebitInput> {
   
   // Default test bank account details
   private defaultAccountName = "Test Account";
-  private defaultBSB = "000-000"; // Test BSB
+  private defaultBSB = "123-456"; // Test BSB
   private defaultAccountNumber = "12345678"; // Test account number
   
   schema = {

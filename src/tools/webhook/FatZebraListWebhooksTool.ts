@@ -4,12 +4,6 @@ import fetch from "node-fetch";
 
 interface FatZebraListWebhooksInput {}
 
-interface FatZebraListWebhooksResponse {
-  successful: boolean;
-  errors?: string[];
-  response?: any;
-}
-
 class FatZebraListWebhooksTool extends MCPTool<FatZebraListWebhooksInput> {
   name = "fat_zebra_list_webhooks";
   description = "List configured webhooks in Fat Zebra.";
@@ -22,23 +16,47 @@ class FatZebraListWebhooksTool extends MCPTool<FatZebraListWebhooksInput> {
 
   async execute(input: FatZebraListWebhooksInput) {
     try {
-      const url = `${this.baseUrl}/webhooks`;
-      const response = await fetch(url, {
+      // Try the documented webhooks endpoint
+      let endpoint = "/webhooks";
+      
+      console.log(`Making request to: ${this.baseUrl}${endpoint}`);
+      
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'Authorization': `Basic ${Buffer.from(`${this.username}:${this.token}`).toString('base64')}`,
         },
       });
-      const data = await response.json() as any;
-      if (!data.successful) {
-        return { successful: false, errors: data.errors || ["Unknown error from Fat Zebra API"] };
+      
+      if (response.status === 404) {
+        return { 
+          successful: false, 
+          errors: ["Webhook endpoint not found. This feature may not be available in the sandbox environment."] 
+        };
       }
-      return { successful: true, response: data.response };
+      
+      const data = await response.json();
+      
+      if (!data.successful) {
+        return { 
+          successful: false, 
+          errors: data.errors || ["Unknown error from Fat Zebra API"] 
+        };
+      }
+      
+      return {
+        successful: true,
+        response: data.response
+      };
     } catch (error) {
-      return { successful: false, errors: [(error instanceof Error ? error.message : String(error))] };
+      console.error('Error listing webhooks:', error);
+      return {
+        successful: false,
+        errors: [(error instanceof Error ? error.message : String(error))]
+      };
     }
   }
 }
 
-export default FatZebraListWebhooksTool; 
+export default FatZebraListWebhooksTool;

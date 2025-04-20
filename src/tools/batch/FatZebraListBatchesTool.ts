@@ -5,16 +5,10 @@ import fetch from "node-fetch";
 interface FatZebraListBatchesInput {
   from_date?: string; // YYYY-MM-DD
   to_date?: string;   // YYYY-MM-DD
-  batch_type?: "purchase" | "refund" | "direct_debit";
+  batch_type?: string;
   status?: string;
-  limit?: number;
-  offset?: number;
-}
-
-interface FatZebraListBatchesResponse {
-  successful: boolean;
-  errors?: string[];
-  response?: any;
+  limit?: string;
+  offset?: string;
 }
 
 class FatZebraListBatchesTool extends MCPTool<FatZebraListBatchesInput> {
@@ -35,7 +29,7 @@ class FatZebraListBatchesTool extends MCPTool<FatZebraListBatchesInput> {
       description: "End date for filtering batches (YYYY-MM-DD)",
     },
     batch_type: {
-      type: z.enum(["purchase", "refund", "direct_debit"]).optional(),
+      type: z.string().optional(),
       description: "Type of batch: purchase, refund, or direct_debit.",
     },
     status: {
@@ -43,41 +37,62 @@ class FatZebraListBatchesTool extends MCPTool<FatZebraListBatchesInput> {
       description: "Batch status to filter by (e.g., processed, pending, failed)",
     },
     limit: {
-      type: z.number().optional().default(20),
+      type: z.string().optional(),
       description: "Number of results to return (default: 20)",
     },
     offset: {
-      type: z.number().optional().default(0),
+      type: z.string().optional(),
       description: "Offset for pagination (default: 0)",
     },
   };
 
   async execute(input: FatZebraListBatchesInput) {
     try {
-      const params = new URLSearchParams();
-      if (input.from_date) params.append('from', input.from_date);
-      if (input.to_date) params.append('to', input.to_date);
-      if (input.batch_type) params.append('batch_type', input.batch_type);
-      if (input.status) params.append('status', input.status);
-      if (input.limit) params.append('limit', input.limit.toString());
-      if (input.offset) params.append('offset', input.offset.toString());
-      const url = `${this.baseUrl}/batches?${params.toString()}`;
-      const response = await fetch(url, {
+      // Build the endpoint string with query parameters
+      let endpoint = "/batches";
+      const queryParams = [];
+      
+      if (input.from_date) queryParams.push(`from_date=${input.from_date}`);
+      if (input.to_date) queryParams.push(`to_date=${input.to_date}`);
+      if (input.batch_type) queryParams.push(`batch_type=${input.batch_type}`);
+      if (input.status) queryParams.push(`status=${input.status}`);
+      if (input.limit) queryParams.push(`limit=${input.limit}`);
+      if (input.offset) queryParams.push(`offset=${input.offset}`);
+      
+      if (queryParams.length > 0) {
+        endpoint += "?" + queryParams.join("&");
+      }
+      
+      // Use the passthrough tool which we know works
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Basic ${Buffer.from(`${this.username}:${this.token}`).toString('base64')}`,
         },
       });
-      const data = await response.json() as any;
-      if (!data.successful) {
-        return { successful: false, errors: data.errors || ["Unknown error from Fat Zebra API"] };
-      }
-      return { successful: true, response: data.response };
+
+      const data = await response.json();
+      
+      // Return the response
+      return {
+        successful: data.successful,
+        response: data.response,
+        errors: data.errors,
+        test: data.test,
+        records: data.records,
+        total_records: data.total_records,
+        page: data.page,
+        total_pages: data.total_pages
+      };
     } catch (error) {
-      return { successful: false, errors: [(error instanceof Error ? error.message : String(error))] };
+      console.error('Error listing batches:', error);
+      return {
+        successful: false,
+        errors: [(error instanceof Error ? error.message : String(error))]
+      };
     }
   }
 }
 
-export default FatZebraListBatchesTool; 
+export default FatZebraListBatchesTool;

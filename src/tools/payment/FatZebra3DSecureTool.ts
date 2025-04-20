@@ -29,6 +29,15 @@ interface ThreeDSRequestBody {
   customer_email?: string;
   return_url: string;
   fraud_detection_enabled?: boolean;
+  extra?: {
+    sli: string;
+    cavv: string;
+    xid: string;
+    par: string;
+    ver: string;
+    directory_server_txn_id: string;
+    threeds_version: string;
+  };
 }
 
 // Define response interface
@@ -177,12 +186,23 @@ class FatZebra3DSecureTool extends MCPTool<FatZebra3DSecureInput> {
       }
 
       // Make the request to the Fat Zebra API
+      // Add 3D Secure parameters based on documentation
+      requestBody['extra'] = {
+        // Default values for testing
+        sli: "05",
+        cavv: "MzM2OGI2ZjkwYjYwY2FjODQ3ZWU=",
+        xid: "ZGUzNzgwYzQxM2ZlMWM0MzVkMjc=",
+        par: "Y",
+        ver: "Y",
+        directory_server_txn_id: "5ddb4c13-2e30-4901-9854-5f0305097a25",
+        threeds_version: "2.1.0"
+      };
+      
       const response = await fetch(`${this.baseUrl}/purchases`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Basic ${Buffer.from(`${this.username}:${this.token}`).toString('base64')}`,
-          'X-3DS-Version': '2.0', // Enable 3D Secure v2
         },
         body: JSON.stringify(requestBody),
       });

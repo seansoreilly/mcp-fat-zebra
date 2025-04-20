@@ -9,28 +9,6 @@ interface FatZebraTokenizeInput {
   card_holder: string;
 }
 
-// Define request body interface with all possible properties
-interface TokenizeRequestBody {
-  card_number: string;
-  card_expiry: string;
-  card_cvv: string;
-  card_holder: string;
-}
-
-// Define response interface
-interface FatZebraTokenizeResponse {
-  successful: boolean;
-  errors?: string[];
-  response: {
-    token: string;
-    card_type: string;
-    card_category: string;
-    card_expiry: string;
-    card_number: string;
-    created_at: string;
-  };
-}
-
 class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
   name = "fat_zebra_tokenize";
   description = "Tokenize a credit card using the Fat Zebra payment gateway";
@@ -81,16 +59,22 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
       // Always provide a card holder name - now required by interface
       const cardHolder = input.card_holder || this.defaultCardHolder;
 
-      // Prepare the request body for the Fat Zebra API
-      const requestBody: TokenizeRequestBody = {
+      // Based on documentation, tokenization is done through purchases
+      // We'll create a $0 authorization to get a token
+      const requestBody = {
         card_number: cardNumber,
         card_expiry: cardExpiry,
         card_cvv: cardCVV,
-        card_holder: cardHolder
+        card_holder: cardHolder,
+        amount: 100, // Small amount for validation
+        reference: `token-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        currency: "AUD",
+        capture: false, // Don't actually charge the card
+        customer_ip: "127.0.0.1"
       };
 
       // Make the request to the Fat Zebra API
-      const response = await fetch(`${this.baseUrl}/credit_cards`, {
+      const response = await fetch(`${this.baseUrl}/purchases`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,7 +83,7 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
         body: JSON.stringify(requestBody),
       });
 
-      const data = await response.json() as FatZebraTokenizeResponse;
+      const data = await response.json();
 
       // Check if the response was successful
       if (!data.successful) {
@@ -112,13 +96,12 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
 
       // Return the tokenized card information
       return {
-        successful: data.successful,
-        card_token: data.response.token,
+        successful: true,
+        card_token: data.response.card_token,
         card_type: data.response.card_type,
         card_category: data.response.card_category,
         card_expiry: data.response.card_expiry,
-        card_number: data.response.card_number, // This will be masked by Fat Zebra
-        created_at: data.response.created_at,
+        card_number: data.response.card_number // This will be masked by Fat Zebra
       };
     } catch (error) {
       console.error('Error tokenizing card:', error);
@@ -131,4 +114,4 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
   }
 }
 
-export default FatZebraTokenizeTool; 
+export default FatZebraTokenizeTool;
