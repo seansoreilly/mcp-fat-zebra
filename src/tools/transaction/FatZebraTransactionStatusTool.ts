@@ -17,7 +17,7 @@ class FatZebraTransactionStatusTool extends MCPTool<FatZebraTransactionStatusInp
   name = "fat_zebra_transaction_status";
   description = "Query the status/details of a transaction by ID or reference using the Fat Zebra payment gateway.";
 
-  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com.au/v1.0";
+  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.pmnts-sandbox.io/v1.0";
   private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
 

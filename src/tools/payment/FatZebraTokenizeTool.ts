@@ -27,7 +27,7 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
   description = "Tokenize a credit card using the Fat Zebra payment gateway";
 
   // Fat Zebra API configuration
-  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com.au/v1.0";
+  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.pmnts-sandbox.io/v1.0";
   private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
 
@@ -72,22 +72,17 @@ class FatZebraTokenizeTool extends MCPTool<FatZebraTokenizeInput> {
       // Always provide a card holder name - now required by interface
       const cardHolder = input.card_holder || this.defaultCardHolder;
 
-      // Based on documentation, tokenization is done through purchases
-      // We'll create a $0 authorization to get a token
+      // Tokenization can be done directly using the /credit_cards endpoint
+      // This creates a token without charging the card
       const requestBody = {
         card_number: cardNumber,
         card_expiry: cardExpiry,
-        card_cvv: cardCVV,
-        card_holder: cardHolder,
-        amount: 100, // Small amount for validation
-        reference: `token-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        currency: "AUD",
-        capture: false, // Don't actually charge the card
-        customer_ip: "127.0.0.1"
+        cvv: cardCVV, // API expects 'cvv' not 'card_cvv'
+        card_holder: cardHolder
       };
 
       // Make the request to the Fat Zebra API
-      const response = await fetch(`${this.baseUrl}/purchases`, {
+      const response = await fetch(`${this.baseUrl}/credit_cards`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

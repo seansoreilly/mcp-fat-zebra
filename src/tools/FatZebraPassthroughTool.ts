@@ -27,7 +27,7 @@ class FatZebraPassthroughTool extends MCPTool<FatZebraPassthroughInput> {
   name = "fat_zebra_passthrough";
   description = "Send any supported Fat Zebra API request (method, endpoint, body, headers) and receive the raw response. Strict input validation and logging for security.";
 
-  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com.au/v1.0";
+  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.pmnts-sandbox.io/v1.0";
   private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
 

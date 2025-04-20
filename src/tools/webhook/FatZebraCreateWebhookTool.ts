@@ -19,7 +19,7 @@ class FatZebraCreateWebhookTool extends MCPTool<FatZebraCreateWebhookInput> {
   name = "fat_zebra_create_webhook";
   description = "Register a new webhook endpoint in Fat Zebra.";
 
-  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com.au/v1.0";
+  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.pmnts-sandbox.io/v1.0";
   private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
 

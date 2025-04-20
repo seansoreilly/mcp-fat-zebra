@@ -65,7 +65,7 @@ class FatZebraTokenPaymentTool extends MCPTool<FatZebraTokenPaymentInput> {
   description = "Process a payment using a tokenized card with the Fat Zebra payment gateway";
 
   // Fat Zebra API configuration
-  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com.au/v1.0";
+  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.pmnts-sandbox.io/v1.0";
   private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
 

@@ -22,7 +22,7 @@ class FatZebraCreateBatchTool extends MCPTool<FatZebraCreateBatchInput> {
   name = "fat_zebra_create_batch";
   description = "Initiate a batch settlement by uploading a CSV file to Fat Zebra. Accepts batch_type (purchase, refund, direct_debit).";
 
-  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.sandbox.fatzebra.com.au/v1.0";
+  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.pmnts-sandbox.io/v1.0";
   private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
   private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
 
