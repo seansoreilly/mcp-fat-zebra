@@ -1,8 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { logger, getLogger } from "./utils/logger.js";
 
 // Import tools
 import FatZebraPassthroughTool from "./tools/FatZebraPassthroughTool.js";
+
+// Create module-specific logger
+const moduleLogger = getLogger('index');
 
 // Initialize the MCP server
 const server = new McpServer({
@@ -19,7 +23,7 @@ function registerTool(tool) {
       tool.schema,
       tool.execute
     );
-    console.log(`Registered tool: ${tool.name}`);
+    moduleLogger.info(`Registered tool: ${tool.name}`);
     return true;
   }
   return false;
@@ -37,12 +41,11 @@ async function registerAllResources() {
 
     // Register the resource with the server
     if (resource) {
-      console.log(`Adding resource: ${resource.name}`);
+      moduleLogger.info(`Adding resource: ${resource.name}`);
 
       try {
         // Since server.resource doesn't exist, register it as a tool that returns content
-        // Add debug logging
-        console.log(`Registering resource as tool: ${resource.name}`);
+        moduleLogger.info(`Registering resource as tool: ${resource.name}`);
 
         server.tool(
           resource.name,
@@ -51,7 +54,7 @@ async function registerAllResources() {
           async () => {
             try {
               const contents = await resource.read();
-              console.log(`Resource read successful, found ${contents.length} items`);
+              moduleLogger.info(`Resource read successful, found ${contents.length} items`);
 
               return {
                 content: contents.map(item => ({
@@ -60,24 +63,24 @@ async function registerAllResources() {
                 }))
               };
             } catch (error) {
-              console.error("Error in resource tool execution:", error);
+              moduleLogger.error({err: error}, "Error in resource tool execution");
               throw error;
             }
           }
         );
 
-        console.log(`Successfully registered resource as tool: ${resource.name}`);
+        moduleLogger.info(`Successfully registered resource as tool: ${resource.name}`);
       } catch (error) {
-        console.error(`Error registering resource: ${resource.name}`, error);
-        console.warn(`Unable to register resource: ${resource.name}`);
+        moduleLogger.error({err: error}, `Error registering resource: ${resource.name}`);
+        moduleLogger.warn(`Unable to register resource: ${resource.name}`);
       }
     }
 
-    console.log("Resources registration attempted");
+    moduleLogger.info("Resources registration attempted");
   } catch (error) {
-    console.error("Error registering resources:", error);
+    moduleLogger.error({err: error}, "Error registering resources");
     // Don't throw the error, just log it
-    console.warn("Continuing without resources");
+    moduleLogger.warn("Continuing without resources");
   }
 }
 
@@ -149,9 +152,9 @@ async function registerAllTools() {
     registerTool(FatZebra3DSecureTool);
     registerTool(FatZebraDirectDebitTool);
 
-    console.log("All tools registered successfully");
+    moduleLogger.info("All tools registered successfully");
   } catch (error) {
-    console.error("Error registering tools:", error);
+    moduleLogger.error({err: error}, "Error registering tools");
     throw error;
   }
 }
@@ -168,5 +171,5 @@ Promise.all([registerAllTools(), registerAllResources()])
     // console.log("Server started successfully. Resources should be available now.");
   })
   .catch((error: Error) => {
-    process.stderr.write(`[ERROR] Failed to initialize tools or start server: ${error}\n`);
+    moduleLogger.error({err: error}, "Failed to initialize tools or start server");
   });

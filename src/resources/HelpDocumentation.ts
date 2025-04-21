@@ -1,6 +1,10 @@
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
+import { getLogger } from "../utils/logger.js";
+
+// Create resource-specific logger
+const logger = getLogger('HelpDocumentation');
 
 export default class HelpDocumentation {
   uri = "resource:docs/markdown";
@@ -20,7 +24,7 @@ export default class HelpDocumentation {
       const __dirname = path.dirname(__filename);
       possiblePaths.push(path.resolve(__dirname, "../../docs"));
     } catch (error) {
-      console.log("Not running in ESM context, skipping fileURLToPath approach");
+      logger.info("Not running in ESM context, skipping fileURLToPath approach");
     }
 
     let docsDir: string | null = null;
@@ -28,21 +32,21 @@ export default class HelpDocumentation {
       try {
         if (fs.existsSync(p)) {
           docsDir = p;
-          console.log(`Found docs directory at: ${p}`);
+          logger.info({ path: p }, "Found docs directory");
           break;
         }
       } catch (error) {}
     }
 
     if (!docsDir) {
-      console.error("Could not find docs directory. Tried:", possiblePaths);
+      logger.error({ paths: possiblePaths }, "Could not find docs directory");
       return [];
     }
 
     try {
       const files = fs.readdirSync(docsDir);
       const markdownFiles = files.filter(f => f.endsWith(".md"));
-      console.log(`Found ${markdownFiles.length} markdown files in ${docsDir}`);
+      logger.info({ count: markdownFiles.length, directory: docsDir }, "Found markdown files");
 
       return markdownFiles.map(filename => {
         const filePath = path.join(docsDir!, filename);
@@ -54,7 +58,7 @@ export default class HelpDocumentation {
         };
       });
     } catch (error) {
-      console.error(`Error reading files from ${docsDir}:`, error);
+      logger.error({ err: error, directory: docsDir }, "Error reading files");
       return [];
     }
   }

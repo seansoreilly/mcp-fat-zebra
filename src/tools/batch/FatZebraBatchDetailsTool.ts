@@ -1,5 +1,9 @@
 import { z } from "zod";
 import fetch from "node-fetch";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraBatchDetailsTool');
 
 interface FatZebraBatchDetailsInput {
   batch_id: string;
@@ -27,7 +31,7 @@ const FatZebraBatchDetailsTool = {
       const token = process.env.FAT_ZEBRA_TOKEN || "TEST";
 
       // Log the request
-      console.log(`[FatZebraBatchDetailsTool] Fetching details for batch: ${batch_id}`);
+      logger.info({ batch_id }, 'Fetching details for batch');
       
       // Make the request to the Fat Zebra API
       const response = await fetch(`${baseUrl}/batches/${encodeURIComponent(batch_id)}`, {
@@ -41,7 +45,7 @@ const FatZebraBatchDetailsTool = {
       const data = await response.json() as any;
       
       // Log the response status
-      console.log(`[FatZebraBatchDetailsTool] Response status: ${response.status}, Success: ${data.successful}`);
+      logger.info({ status: response.status, successful: data.successful }, 'Received response');
       
       // Check if the response was successful
       if (!data.successful) {
@@ -73,7 +77,7 @@ const FatZebraBatchDetailsTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraBatchDetailsTool] Error:', error);
+      logger.error({ err: error }, 'Error processing request');
       
       const errorResult = { 
         successful: false, 
