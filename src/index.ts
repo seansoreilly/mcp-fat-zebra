@@ -4,6 +4,11 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 // Import tools
 import FatZebraPassthroughTool from "./tools/FatZebraPassthroughTool.js";
 
+// Import webhook tools
+import FatZebraCreateWebhookTool from "./tools/webhook/FatZebraCreateWebhookTool.js";
+import FatZebraListWebhooksTool from "./tools/webhook/FatZebraListWebhooksTool.js";
+import FatZebraDeleteWebhookTool from "./tools/webhook/FatZebraDeleteWebhookTool.js";
+
 // Import card tools
 import FatZebraStoreCardTool from "./tools/card/FatZebraStoreCardTool.js";
 import FatZebraListStoredCardsTool from "./tools/card/FatZebraListStoredCardsTool.js";
@@ -183,6 +188,28 @@ server.tool(
   FatZebraTransactionStatusTool.description,
   FatZebraTransactionStatusTool.schema,
   FatZebraTransactionStatusTool.execute
+);
+
+// Register webhook tools
+server.tool(
+  FatZebraCreateWebhookTool.name,
+  FatZebraCreateWebhookTool.description,
+  FatZebraCreateWebhookTool.schema,
+  FatZebraCreateWebhookTool.execute
+);
+
+server.tool(
+  FatZebraListWebhooksTool.name,
+  FatZebraListWebhooksTool.description,
+  FatZebraListWebhooksTool.schema,
+  FatZebraListWebhooksTool.execute
+);
+
+server.tool(
+  FatZebraDeleteWebhookTool.name,
+  FatZebraDeleteWebhookTool.description,
+  FatZebraDeleteWebhookTool.schema,
+  FatZebraDeleteWebhookTool.execute
 );
 
 // Start the server with stdio transport
