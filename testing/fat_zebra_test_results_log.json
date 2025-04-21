@@ -1,0 +1,163 @@
+{
+  "testResults": {
+    "connectivity": {
+      "method": "GET",
+      "endpoint": "/ping",
+      "response": {
+        "successful": true,
+        "status": 200,
+        "response": {
+          "timestamp": 1745231477,
+          "echo": "NONE"
+        }
+      }
+    },
+    "tokenize": {
+      "method": "tokenize",
+      "params": {
+        "card_number": "4005550000000001",
+        "card_expiry": "05/2025",
+        "card_cvv": "123",
+        "card_holder": "Test User"
+      },
+      "response": {
+        "successful": true,
+        "status": 200,
+        "response": {
+          "card_type": "VISA",
+          "card_category": "Debit",
+          "card_expiry": "2025-05-31",
+          "card_number": "400555XXXXXX0001"
+        }
+      }
+    },
+    "payment": {
+      "method": "payment",
+      "params": {
+        "amount": 100,
+        "card_number": "4005550000000001",
+        "card_expiry": "05/2025",
+        "card_cvv": "123",
+        "card_holder": "Test User",
+        "reference": "TEST-PAY-1234"
+      },
+      "response": {
+        "successful": true,
+        "status": 200,
+        "response": {
+          "transaction_id": "071-P-SXRNSXLZRM323U86",
+          "card_token": "9li00as8hs3ri58riogt",
+          "amount": 100,
+          "reference": "TEST-PAY-1234",
+          "message": "Approved",
+          "authorization": "00",
+          "currency": "AUD",
+          "timestamp": "2025-04-21T20:32:03+10:00"
+        }
+      }
+    },
+    "tokenPayment": {
+      "method": "token_payment",
+      "params": {
+        "amount": 200,
+        "card_token": "9li00as8hs3ri58riogt",
+        "cvv": "123",
+        "card_holder": "Test User",
+        "reference": "TEST-TOKEN-1234"
+      },
+      "response": {
+        "successful": true,
+        "status": 200,
+        "response": {
+          "transaction_id": "071-P-IVDIOUQBJPBCR4EY",
+          "amount": 200,
+          "reference": "TEST-TOKEN-1234",
+          "message": "Approved",
+          "authorization": "00",
+          "currency": "AUD",
+          "timestamp": "2025-04-21T20:32:07+10:00"
+        }
+      }
+    },
+    "refund": {
+      "method": "refund",
+      "params": {
+        "amount": 100,
+        "transaction_id": "071-P-SXRNSXLZRM323U86",
+        "reference": "TEST-REFUND-1234"
+      },
+      "response": {
+        "successful": true,
+        "status": 200,
+        "response": {
+          "refund_id": "071-R-B0YMEVN5VCBUBLD5",
+          "amount": 100,
+          "reference": "TEST-REFUND-1234",
+          "transaction_id": "071-R-B0YMEVN5VCBUBLD5",
+          "message": "Approved",
+          "currency": "AUD"
+        }
+      }
+    },
+    "3dSecure": {
+      "method": "3d_secure",
+      "params": {
+        "amount": 300,
+        "card_number": "4005550000000001",
+        "card_expiry": "05/2025",
+        "card_cvv": "123",
+        "card_holder": "Test User",
+        "reference": "TEST-3DS-1234",
+        "return_url": "https://example.com/return",
+        "customer_ip": "127.0.0.1"
+      },
+      "response": {
+        "successful": true,
+        "status": 200,
+        "response": {
+          "transaction_id": "071-P-TB7VB7TWCMD4SVOU",
+          "three_ds": null,
+          "amount": 300,
+          "reference": "TEST-3DS-1234",
+          "message": "Approved",
+          "currency": "AUD",
+          "requires_action": false,
+          "action_url": "",
+          "action_method": "",
+          "action_params": {}
+        }
+      }
+    },
+    "directDebit": {
+      "method": "direct_debit",
+      "params": {
+        "amount": 400,
+        "bsb": "012-366",
+        "account_number": "123456789",
+        "account_name": "Test Account",
+        "reference": "TEST-DD-1234",
+        "description": "Test Direct Debit"
+      },
+      "response": {
+        "successful": true,
+        "status": 201,
+        "response": {
+          "transaction_id": "071-DD-JE79NV6O",
+          "amount": 400,
+          "reference": "TEST-DD-1234",
+          "message": "",
+          "status": "New",
+          "settlement_date": "",
+          "transaction_date": "",
+          "account_name": "Test Account",
+          "account_number": "*****6789",
+          "account_routing": "",
+          "test": true
+        }
+      }
+    }
+  },
+  "testDate": "2025-04-21",
+  "testEnvironment": "Development/Test",
+  "allTestsPassed": true
+}
