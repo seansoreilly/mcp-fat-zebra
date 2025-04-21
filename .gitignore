@@ -1,6 +1,7 @@
 # Dependency directories
 node_modules/
 jspm_packages/
+.venv/
 
 # Build outputs
 dist/
@@ -46,4 +47,9 @@ coverage/
 .node_repl_history
 
 # Output of 'npm pack'
-*.tgz 
+*.tgz
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class 

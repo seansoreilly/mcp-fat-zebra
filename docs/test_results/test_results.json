@@ -1,0 +1,144 @@
+{
+  "testDate": "2025-04-20",
+  "successfulTests": [
+    {
+      "tool": "fat_zebra_payment",
+      "status": "success",
+      "transactionId": "071-P-NDLYXUZNKBAHSLVM",
+      "amount": 1000,
+      "message": "Approved"
+    },
+    {
+      "tool": "fat_zebra_tokenize",
+      "status": "success",
+      "cardToken": "h6cu60h5b5r25tpus5kz",
+      "cardType": "MasterCard"
+    },
+    {
+      "tool": "fat_zebra_token_payment",
+      "status": "success",
+      "transactionId": "071-P-UFNLEIPJQBRTE6HI",
+      "amount": 2500,
+      "message": "Approved"
+    },
+    {
+      "tool": "fat_zebra_3d_secure",
+      "status": "success",
+      "transactionId": "071-P-21IQWEAZPI8QAMZD",
+      "amount": 3000,
+      "message": "Approved"
+    },
+    {
+      "tool": "fat_zebra_refund",
+      "status": "success",
+      "refundId": "071-R-U1AGNO68WTZYSZTM",
+      "amount": 500
+    },
+    {
+      "tool": "fat_zebra_transaction_status",
+      "status": "success",
+      "detail": "Retrieved transaction details"
+    },
+    {
+      "tool": "fat_zebra_list_batches",
+      "status": "success",
+      "recordCount": 20
+    },
+    {
+      "tool": "fat_zebra_batch_details",
+      "status": "success",
+      "batchId": "071-BF-IHTU51YU"
+    },
+    {
+      "tool": "fat_zebra_passthrough",
+      "status": "success",
+      "method": "GET",
+      "endpoint": "/purchases/071-P-UFNLEIPJQBRTE6HI"
+    }
+  ],
+  "failedTests": [
+    {
+      "tool": "fat_zebra_direct_debit",
+      "status": "error",
+      "error": "Unsupported content type: error"
+    },
+    {
+      "tool": "fat_zebra_list_transactions",
+      "status": "error",
+      "error": "Unsupported content type: error"
+    },
+    {
+      "tool": "fat_zebra_transaction_history",
+      "status": "error",
+      "error": "Could not find Purchase"
+    },
+    {
+      "tool": "fat_zebra_create_customer",
+      "status": "error",
+      "error": "Unsupported content type: error"
+    },
+    {
+      "tool": "fat_zebra_update_customer",
+      "status": "error",
+      "error": "Record not found"
+    },
+    {
+      "tool": "fat_zebra_store_card",
+      "status": "error",
+      "error": "Not Found"
+    },
+    {
+      "tool": "fat_zebra_list_stored_cards",
+      "status": "error",
+      "error": "Not Found"
+    },
+    {
+      "tool": "fat_zebra_delete_stored_card",
+      "status": "error",
+      "error": "Unknown error from Fat Zebra API"
+    },
+    {
+      "tool": "fat_zebra_search_refunds",
+      "status": "error",
+      "error": "Unsupported content type: error"
+    },
+    {
+      "tool": "fat_zebra_create_batch",
+      "status": "error",
+      "error": "ENOENT: no such file or directory"
+    },
+    {
+      "tool": "fat_zebra_reconciliation_report",
+      "status": "error",
+      "error": "Not Found"
+    },
+    {
+      "tool": "fat_zebra_create_webhook",
+      "status": "error",
+      "error": "Unsupported content type: error"
+    },
+    {
+      "tool": "fat_zebra_list_webhooks",
+      "status": "error",
+      "error": "Not Found"
+    },
+    {
+      "tool": "fat_zebra_test_webhook",
+      "status": "error",
+      "error": "Not Found"
+    },
+    {
+      "tool": "fat_zebra_delete_webhook",
+      "status": "error",
+      "error": "Unknown error from Fat Zebra API"
+    }
+  ],
+  "recommendations": [
+    "Investigate 'Unsupported content type' errors",
+    "Check if customer management features are enabled in the test environment",
+    "Implement proper file handling for batch creation",
+    "Test webhook functionality in a properly configured environment",
+    "Setup proper error handling for 'Not Found' errors",
+    "Consider implementing retry logic for intermittent failures"
+  ]
+}
