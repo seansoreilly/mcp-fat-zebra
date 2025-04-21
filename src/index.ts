@@ -25,6 +25,62 @@ function registerTool(tool) {
   return false;
 }
 
+
+// Import and register all resources
+async function registerAllResources() {
+  try {
+    // Import and register resources
+    const { default: MarkdownDocsResource } = await import("./resources/MarkdownDocsResource.js");
+    
+    // Create an instance of the resource
+    const resource = new MarkdownDocsResource();
+    
+    // Register the resource with the server
+    if (resource) {
+      console.log(`Adding resource: ${resource.name}`);
+      
+      try {
+        // Since server.resource doesn't exist, register it as a tool that returns content
+        // Add debug logging
+        console.log(`Registering resource as tool: ${resource.name}`);
+        
+        server.tool(
+          resource.name,
+          resource.description,
+          {}, // No input schema needed
+          async () => {
+            try {
+              const contents = await resource.read();
+              console.log(`Resource read successful, found ${contents.length} items`);
+              
+              return {
+                content: contents.map(item => ({
+                  type: "text",
+                  text: item.content
+                }))
+              };
+            } catch (error) {
+              console.error("Error in resource tool execution:", error);
+              throw error;
+            }
+          }
+        );
+        
+        console.log(`Successfully registered resource as tool: ${resource.name}`);
+      } catch (error) {
+        console.error(`Error registering resource: ${resource.name}`, error);
+        console.warn(`Unable to register resource: ${resource.name}`);
+      }
+    }
+    
+    console.log("Resources registration attempted");
+  } catch (error) {
+    console.error("Error registering resources:", error);
+    // Don't throw the error, just log it
+    console.warn("Continuing without resources");
+  }
+}
+
 // Import and register all tools
 async function registerAllTools() {
   try {
@@ -100,8 +156,8 @@ async function registerAllTools() {
   }
 }
 
-// Register all tools and start the server
-registerAllTools()
+// Register all tools and resources, then start the server
+Promise.all([registerAllTools(), registerAllResources()])
   .then(() => {
     // Start the server with stdio transport
     const transport = new StdioServerTransport();

@@ -1,19 +1,14 @@
-import { Tool, ResourceContent } from "@modelcontextprotocol/sdk";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 
-export default class DocumentationResource extends Tool {
+export default class MarkdownDocsResource {
   uri = "resource:docs/markdown";
-  name = "Markdown Documentation";
+  name = "markdown-documentation";
   description = "Understand this documentation BEFORE using Fat Zebra tools.";
-  mimeType = "text/markdown";
+  contentType = "text/markdown";
 
-  constructor() {
-    super();
-  }
-
-  async read(): Promise<ResourceContent[]> {
+  async read(): Promise<{ uri: string; content: string; contentType: string }[]> {
     const possiblePaths = [
       path.resolve(process.cwd(), "docs"),
       path.resolve(process.cwd(), "src", "../docs"),
