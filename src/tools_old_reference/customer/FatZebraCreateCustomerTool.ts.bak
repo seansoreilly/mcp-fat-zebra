@@ -1,0 +1,143 @@
+import { Tool } from "@modelcontextprotocol/sdk";
+import { z } from "zod";
+import fetch from "node-fetch";
+
+interface FatZebraCreateCustomerInput {
+  // Mandatory fields
+  first_name: string;
+  last_name: string;
+  reference: string;
+  card_token: string; // Make card_token mandatory
+  
+  // Optional fields
+  email?: string; // Client sends email instead of email_address
+  ip_address?: string;
+  
+  address?: {
+    address: string;
+    city: string;
+    state: string;
+    postcode: string;
+    country: string;
+  };
+}
+
+interface FatZebraCreateCustomerResponse {
+  successful: boolean;
+  errors?: string[];
+  response?: any;
+}
+
+class FatZebraCreateCustomerTool extends Tool {
+  name = "fat_zebra_create_customer";
+  description = "Create a new customer in Fat Zebra payment gateway using a card token only.";
+
+  private baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.pmnts-sandbox.io/v1.0";
+  private username = process.env.FAT_ZEBRA_USERNAME || "TEST";
+  private token = process.env.FAT_ZEBRA_TOKEN || "TEST";
+
+  schema = {
+    // Mandatory fields
+    first_name: {
+      type: z.string(),
+      description: "The customer's first name (MANDATORY).",
+    },
+    last_name: {
+      type: z.string(),
+      description: "The customer's last name (MANDATORY).",
+    },
+    reference: {
+      type: z.string(),
+      description: "A unique reference for this customer, e.g. your internal customer ID (MANDATORY).",
+    },
+    card_token: {
+      type: z.string(),
+      description: "A token representing the customer's credit card (MANDATORY). Direct card details are not supported.",
+    },
+    
+    // Optional fields
+    email: {
+      type: z.string().email().optional(),
+      description: "The customer's email address (optional).",
+    },
+    ip_address: {
+      type: z.string().optional(),
+      description: "The customer's IP address (optional).",
+    },
+    address: {
+      type: z.object({
+        address: z.string(),
+        city: z.string(),
+        state: z.string(),
+        postcode: z.string(),
+        country: z.string(),
+      }).optional(),
+      description: "The customer's address details (optional).",
+    },
+  };
+
+  async execute(input: FatZebraCreateCustomerInput) {
+    try {
+      // Prepare the request body for the Fat Zebra API
+      const requestBody: any = {
+        first_name: input.first_name,
+        last_name: input.last_name,
+        reference: input.reference,
+        // Always include the card object with card_token
+        card: {
+          card_token: input.card_token
+        }
+      };
+
+      // Map email to email_address as expected by Fat Zebra API
+      if (input.email) {
+        requestBody.email_address = input.email;
+      }
+      
+      if (input.ip_address) {
+        requestBody.ip_address = input.ip_address;
+      }
+      
+      if (input.address) {
+        requestBody.address = input.address;
+      }
+
+      // Make the request to the Fat Zebra API
+      const response = await fetch(`${this.baseUrl}/customers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${Buffer.from(`${this.username}:${this.token}`).toString('base64')}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      // Handle response based on status code
+      const status = response.status;
+      const data = await response.json() as any;
+
+      // 201 is the success code for customer creation
+      if (status === 201) {
+        return {
+          successful: true,
+          response: data.response,
+        };
+      }
+
+      // Handle errors
+      return {
+        successful: false,
+        errors: data.errors || ["Unknown error from Fat Zebra API"],
+      };
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      // Return error as a response
+      return {
+        successful: false,
+        errors: [(error instanceof Error ? error.message : String(error))]
+      };
+    }
+  }
+}
+
+export default FatZebraCreateCustomerTool; 

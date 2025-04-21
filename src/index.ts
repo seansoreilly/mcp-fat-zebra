@@ -1,16 +1,30 @@
-import { MCPServer } from "mcp-framework";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
-// Create the MCP server instance
-const server = new MCPServer();
+// Import tools
+import FatZebraPassthroughTool from "./tools/FatZebraPassthroughTool.js";
 
-// The MCP Framework automatically discovers and loads tools and resources
-// from the tools and resources directories when the server starts
+// Initialize the MCP server
+const server = new McpServer({
+  name: "fat-zebra-server",
+  version: "1.0.0"
+});
 
-// Start the server
-server.start()
+// Register tools
+server.tool(
+  FatZebraPassthroughTool.name,
+  FatZebraPassthroughTool.description,
+  FatZebraPassthroughTool.schema,
+  FatZebraPassthroughTool.execute
+);
+
+// Start the server with stdio transport
+const transport = new StdioServerTransport();
+server.connect(transport)
   .then(() => {
-    console.log("MCP server started successfully. Resources should be available now.");
+    console.log("Tools and resources loaded successfully.");
+    console.log("Server started successfully. Resources should be available now.");
   })
-  .catch((error) => {
-    process.stderr.write(`[ERROR] Failed to start server: ${error}\n`);
+  .catch((error: Error) => {
+    process.stderr.write(`[ERROR] Failed to initialize tools or start server: ${error}\n`);
   });
