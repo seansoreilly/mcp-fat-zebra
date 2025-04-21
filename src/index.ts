@@ -9,6 +9,22 @@ import FatZebraStoreCardTool from "./tools/card/FatZebraStoreCardTool.js";
 import FatZebraListStoredCardsTool from "./tools/card/FatZebraListStoredCardsTool.js";
 import FatZebraDeleteStoredCardTool from "./tools/card/FatZebraDeleteStoredCardTool.js";
 
+// Import customer tools
+import FatZebraCreateCustomerTool from "./tools/customer/FatZebraCreateCustomerTool.js";
+import FatZebraUpdateCustomerTool from "./tools/customer/FatZebraUpdateCustomerTool.js";
+
+// Import batch tools
+import FatZebraBatchDetailsTool from "./tools/batch/FatZebraBatchDetailsTool.js";
+import FatZebraCreateBatchTool from "./tools/batch/FatZebraCreateBatchTool.js";
+import FatZebraListBatchesTool from "./tools/batch/FatZebraListBatchesTool.js";
+import FatZebraReconciliationReportTool from "./tools/batch/FatZebraReconciliationReportTool.js";
+
+// Import transaction tools
+import FatZebraListTransactionsTool from "./tools/transaction/FatZebraListTransactionsTool.js";
+import FatZebraSearchRefundsTool from "./tools/transaction/FatZebraSearchRefundsTool.js";
+import FatZebraTransactionHistoryTool from "./tools/transaction/FatZebraTransactionHistoryTool.js";
+import FatZebraTransactionStatusTool from "./tools/transaction/FatZebraTransactionStatusTool.js";
+
 // Import payment tools
 import FatZebraPaymentTool from "./tools/payment/FatZebraPaymentTool.js";
 import FatZebraRefundTool from "./tools/payment/FatZebraRefundTool.js";
@@ -94,6 +110,79 @@ server.tool(
   FatZebraDirectDebitTool.description,
   FatZebraDirectDebitTool.schema,
   FatZebraDirectDebitTool.execute
+);
+
+// Register customer tools
+server.tool(
+  FatZebraCreateCustomerTool.name,
+  FatZebraCreateCustomerTool.description,
+  FatZebraCreateCustomerTool.schema,
+  FatZebraCreateCustomerTool.execute
+);
+
+server.tool(
+  FatZebraUpdateCustomerTool.name,
+  FatZebraUpdateCustomerTool.description,
+  FatZebraUpdateCustomerTool.schema,
+  FatZebraUpdateCustomerTool.execute
+);
+
+// Register batch tools
+server.tool(
+  FatZebraBatchDetailsTool.name,
+  FatZebraBatchDetailsTool.description,
+  FatZebraBatchDetailsTool.schema,
+  FatZebraBatchDetailsTool.execute
+);
+
+server.tool(
+  FatZebraCreateBatchTool.name,
+  FatZebraCreateBatchTool.description,
+  FatZebraCreateBatchTool.schema,
+  FatZebraCreateBatchTool.execute
+);
+
+server.tool(
+  FatZebraListBatchesTool.name,
+  FatZebraListBatchesTool.description,
+  FatZebraListBatchesTool.schema,
+  FatZebraListBatchesTool.execute
+);
+
+server.tool(
+  FatZebraReconciliationReportTool.name,
+  FatZebraReconciliationReportTool.description,
+  FatZebraReconciliationReportTool.schema,
+  FatZebraReconciliationReportTool.execute
+);
+
+// Register transaction tools
+server.tool(
+  FatZebraListTransactionsTool.name,
+  FatZebraListTransactionsTool.description,
+  FatZebraListTransactionsTool.schema,
+  FatZebraListTransactionsTool.execute
+);
+
+server.tool(
+  FatZebraSearchRefundsTool.name,
+  FatZebraSearchRefundsTool.description,
+  FatZebraSearchRefundsTool.schema,
+  FatZebraSearchRefundsTool.execute
+);
+
+server.tool(
+  FatZebraTransactionHistoryTool.name,
+  FatZebraTransactionHistoryTool.description,
+  FatZebraTransactionHistoryTool.schema,
+  FatZebraTransactionHistoryTool.execute
+);
+
+server.tool(
+  FatZebraTransactionStatusTool.name,
+  FatZebraTransactionStatusTool.description,
+  FatZebraTransactionStatusTool.schema,
+  FatZebraTransactionStatusTool.execute
 );
 
 // Start the server with stdio transport
