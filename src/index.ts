@@ -1,8 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { logger, getLogger } from "./utils/logger.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
-// Import tools
+// Import the main passthrough tool explicitly as it's used directly
 import FatZebraPassthroughTool from "./tools/FatZebraPassthroughTool.js";
 
 // Create module-specific logger
@@ -29,6 +32,39 @@ function registerTool(tool) {
   return false;
 }
 
+// Function to recursively find all tool files in a directory
+async function findToolFiles(dir) {
+  const files = [];
+  
+  // Convert to absolute path if needed
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const absoluteDir = path.isAbsolute(dir) ? dir : path.join(__dirname, dir);
+  
+  try {
+    const entries = await fs.promises.readdir(absoluteDir, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      const fullPath = path.join(absoluteDir, entry.name);
+      
+      if (entry.isDirectory()) {
+        // Recursively search subdirectories
+        const subDirFiles = await findToolFiles(fullPath);
+        files.push(...subDirFiles);
+      } else if (entry.isFile() && 
+                entry.name.endsWith('.js') && 
+                entry.name.includes('FatZebra') && 
+                entry.name.includes('Tool')) {
+        // Add tool files that match the naming pattern
+        files.push(fullPath);
+      }
+    }
+  } catch (error) {
+    moduleLogger.error({err: error}, `Error reading directory: ${absoluteDir}`);
+  }
+  
+  return files;
+}
 
 // Import and register all resources
 async function registerAllResources() {
@@ -87,72 +123,47 @@ async function registerAllResources() {
 // Import and register all tools
 async function registerAllTools() {
   try {
-    // Register the main passthrough tool
+    // Register the main passthrough tool first
     registerTool(FatZebraPassthroughTool);
+    moduleLogger.info("Registered passthrough tool directly");
+    
+    // Find all tool files in the tools directory recursively
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const toolsDir = path.join(__dirname, 'tools');
+    
+    moduleLogger.info(`Searching for tools in directory: ${toolsDir}`);
+    const toolFiles = await findToolFiles(toolsDir);
+    moduleLogger.info(`Found ${toolFiles.length} potential tool files`);
 
-    // Import and register webhook tools
-    const { default: FatZebraCreateWebhookTool } = await import("./tools/webhook/FatZebraCreateWebhookTool.js");
-    const { default: FatZebraListWebhooksTool } = await import("./tools/webhook/FatZebraListWebhooksTool.js");
-    const { default: FatZebraDeleteWebhookTool } = await import("./tools/webhook/FatZebraDeleteWebhookTool.js");
+    // Import and register each tool
+    let successCount = 0;
+    for (const file of toolFiles) {
+      try {
+        // Convert absolute path to relative import path
+        const relativePath = path.relative(__dirname, file).replace(/\\/g, '/');
+        // Skip the passthrough tool as it's already registered
+        if (relativePath === 'tools/FatZebraPassthroughTool.js') {
+          continue;
+        }
+        
+        const importPath = `./${relativePath}`;
+        moduleLogger.info(`Importing tool from: ${importPath}`);
+        
+        const module = await import(importPath);
+        if (module && module.default) {
+          const result = registerTool(module.default);
+          if (result) {
+            successCount++;
+          }
+        }
+      } catch (error) {
+        moduleLogger.error({err: error}, `Failed to import or register tool from: ${file}`);
+        // Continue to the next file instead of stopping
+      }
+    }
 
-    registerTool(FatZebraCreateWebhookTool);
-    registerTool(FatZebraListWebhooksTool);
-    registerTool(FatZebraDeleteWebhookTool);
-
-    // Import and register card tools
-    const { default: FatZebraStoreCardTool } = await import("./tools/card/FatZebraStoreCardTool.js");
-    const { default: FatZebraListStoredCardsTool } = await import("./tools/card/FatZebraListStoredCardsTool.js");
-    const { default: FatZebraDeleteStoredCardTool } = await import("./tools/card/FatZebraDeleteStoredCardTool.js");
-
-    registerTool(FatZebraStoreCardTool);
-    registerTool(FatZebraListStoredCardsTool);
-    registerTool(FatZebraDeleteStoredCardTool);
-
-    // Import and register customer tools
-    const { default: FatZebraCreateCustomerTool } = await import("./tools/customer/FatZebraCreateCustomerTool.js");
-    const { default: FatZebraUpdateCustomerTool } = await import("./tools/customer/FatZebraUpdateCustomerTool.js");
-
-    registerTool(FatZebraCreateCustomerTool);
-    registerTool(FatZebraUpdateCustomerTool);
-
-    // Import and register batch tools
-    const { default: FatZebraBatchDetailsTool } = await import("./tools/batch/FatZebraBatchDetailsTool.js");
-    const { default: FatZebraCreateBatchTool } = await import("./tools/batch/FatZebraCreateBatchTool.js");
-    const { default: FatZebraListBatchesTool } = await import("./tools/batch/FatZebraListBatchesTool.js");
-    const { default: FatZebraReconciliationReportTool } = await import("./tools/batch/FatZebraReconciliationReportTool.js");
-
-    registerTool(FatZebraBatchDetailsTool);
-    registerTool(FatZebraCreateBatchTool);
-    registerTool(FatZebraListBatchesTool);
-    registerTool(FatZebraReconciliationReportTool);
-
-    // Import and register transaction tools
-    const { default: FatZebraListTransactionsTool } = await import("./tools/transaction/FatZebraListTransactionsTool.js");
-    const { default: FatZebraSearchRefundsTool } = await import("./tools/transaction/FatZebraSearchRefundsTool.js");
-    const { default: FatZebraTransactionHistoryTool } = await import("./tools/transaction/FatZebraTransactionHistoryTool.js");
-    const { default: FatZebraTransactionStatusTool } = await import("./tools/transaction/FatZebraTransactionStatusTool.js");
-
-    registerTool(FatZebraListTransactionsTool);
-    registerTool(FatZebraSearchRefundsTool);
-    registerTool(FatZebraTransactionHistoryTool);
-    registerTool(FatZebraTransactionStatusTool);
-
-    // Import and register payment tools
-    const { default: FatZebraPaymentTool } = await import("./tools/payment/FatZebraPaymentTool.js");
-    const { default: FatZebraRefundTool } = await import("./tools/payment/FatZebraRefundTool.js");
-    const { default: FatZebraTokenPaymentTool } = await import("./tools/payment/FatZebraTokenPaymentTool.js");
-    const { default: FatZebraTokenizeTool } = await import("./tools/payment/FatZebraTokenizeTool.js");
-    const { default: FatZebra3DSecureTool } = await import("./tools/payment/FatZebra3DSecureTool.js");
-    const { default: FatZebraDirectDebitTool } = await import("./tools/payment/FatZebraDirectDebitTool.js");
-
-    registerTool(FatZebraPaymentTool);
-    registerTool(FatZebraRefundTool);
-    registerTool(FatZebraTokenPaymentTool);
-    registerTool(FatZebraTokenizeTool);
-    registerTool(FatZebra3DSecureTool);
-    registerTool(FatZebraDirectDebitTool);
-
-    moduleLogger.info("All tools registered successfully");
+    moduleLogger.info(`Successfully registered ${successCount} tools from ${toolFiles.length} files`);
   } catch (error) {
     moduleLogger.error({err: error}, "Error registering tools");
     throw error;
@@ -167,9 +178,8 @@ Promise.all([registerAllTools(), registerAllResources()])
     return server.connect(transport);
   })
   .then(() => {
-    // console.log("Tools and resources loaded successfully.");
-    // console.log("Server started successfully. Resources should be available now.");
+    moduleLogger.info("Server started successfully with all tools and resources loaded");
   })
-  .catch((error: Error) => {
+  .catch((error) => {
     moduleLogger.error({err: error}, "Failed to initialize tools or start server");
   });
