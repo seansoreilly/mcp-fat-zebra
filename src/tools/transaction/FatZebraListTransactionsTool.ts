@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraListTransactionsTool');
 import fetch from "node-fetch";
 
 // Define input interface
@@ -56,7 +60,7 @@ const FatZebraListTransactionsTool = {
       }
       
       // Log the request
-      console.log(`[FatZebraListTransactionsTool] Listing transactions with filters: ${JSON.stringify(input)}`);
+      logger.info('Listing transactions with filters: ${JSON.stringify(input)}');
       
       // Make the request to the Fat Zebra API
       const response = await fetch(`${baseUrl}${endpoint}`, {
@@ -71,7 +75,7 @@ const FatZebraListTransactionsTool = {
       const data = await response.json() as any;
       
       // Log the response
-      console.log(`[FatZebraListTransactionsTool] Response: ${data.successful ? "Success" : "Failed"}`);
+      logger.info('Response: ${data.successful ? "Success" : "Failed"}');
       
       if (!data.successful) {
         return { 
@@ -100,7 +104,7 @@ const FatZebraListTransactionsTool = {
       };
       
       // Include a more detailed log for debugging
-      console.log(`[FatZebraListTransactionsTool] Complete response data: ${JSON.stringify(data)}`);
+      logger.info('Complete response data: ${JSON.stringify(data)}');
 
       
       return { 
@@ -110,7 +114,7 @@ const FatZebraListTransactionsTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraListTransactionsTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

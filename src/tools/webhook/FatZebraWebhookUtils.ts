@@ -1,5 +1,9 @@
 import fetch from "node-fetch";
 
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraWebhookUtils');
 /**
  * Check if the webhooks API is available in the current Fat Zebra environment
  * @param baseUrl The base URL for the Fat Zebra API
@@ -14,7 +18,7 @@ export const checkWebhooksApiAvailability = async (
 ): Promise<boolean> => {
   try {
     const url = `${baseUrl}/web_hooks`;
-    console.log(`[FatZebraWebhookUtils] Checking webhooks API availability at ${url}`);
+    logger.info('Checking webhooks API availability at ${url}');
 
     const response = await fetch(url, {
       method: 'GET',
@@ -31,7 +35,7 @@ export const checkWebhooksApiAvailability = async (
 
     return true;
   } catch (error) {
-    console.error('[FatZebraWebhookUtils] Error checking webhooks API availability:', error);
+    logger.error({ err: error }, 'Error checking webhooks API availability:');
     return false;
   }
 };

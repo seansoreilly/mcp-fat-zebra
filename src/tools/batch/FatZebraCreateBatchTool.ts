@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraCreateBatchTool');
 import fetch from "node-fetch";
 import FormData from "form-data";
 
@@ -58,21 +62,21 @@ const FatZebraCreateBatchTool = {
       // Using a hardcoded filename format matching what we know works in the sandbox
       const fileName = `BATCH-v1-PURCHASE-TEST-20110131-${uniqueRef}.csv`;
       
-      console.log(`[FatZebraCreateBatchTool] Using filename: ${fileName}`);
+      logger.info('Using filename: ${fileName}');
       
       // Add the required parameters
       formData.append('batch_type', batch_type);
       
       // Create a Buffer from the CSV content and append it with the proper filename
       const fileBuffer = Buffer.from(testCsvContent);
-      console.log(`[FatZebraCreateBatchTool] Debug - File data being sent:\nFilename: ${fileName}\nBatch type: ${batch_type}\nContent length: ${fileBuffer.length} bytes`);
+      logger.info('Debug - File data being sent:\nFilename: ${fileName}\nBatch type: ${batch_type}\nContent length: ${fileBuffer.length} bytes');
       formData.append('file', fileBuffer, {
         filename: fileName,
         contentType: 'text/csv',
       });
       
       // Log the request
-      console.log(`[FatZebraCreateBatchTool] Creating batch of type: ${batch_type}`);
+      logger.info('Creating batch of type: ${batch_type}');
       
       // Make the request to the Fat Zebra API
       const response = await fetch(`${baseUrl}/batches`, {
@@ -87,7 +91,7 @@ const FatZebraCreateBatchTool = {
       const data = await response.json() as any;
       
       // Log the response status
-      console.log(`[FatZebraCreateBatchTool] Response status: ${response.status}, Success: ${data.successful}`);
+      logger.info('Response status: ${response.status}, Success: ${data.successful}');
       
       // Check if the response was successful
       if (!data.successful) {
@@ -119,7 +123,7 @@ const FatZebraCreateBatchTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraCreateBatchTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

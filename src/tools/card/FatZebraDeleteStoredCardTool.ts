@@ -1,5 +1,10 @@
 import { z } from "zod";
 import fetch from "node-fetch";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraDeleteStoredCardTool');
+
 
 // Input type for delete stored card requests
 interface FatZebraDeleteStoredCardInput {
@@ -31,7 +36,7 @@ const FatZebraDeleteStoredCardTool = {
       const token = process.env.FAT_ZEBRA_TOKEN || "TEST";
       
       const url = `${baseUrl}/customers/${encodeURIComponent(customer_id)}/cards/${encodeURIComponent(card_token)}`;
-      console.log(`[FatZebraDeleteStoredCardTool] Deleting card from: ${url}`);
+      logger.info(`Deleting card from: ${url}`);
       
       const response = await fetch(url, {
         method: 'DELETE',
@@ -44,7 +49,7 @@ const FatZebraDeleteStoredCardTool = {
       const data = await response.json() as any;
       
       // Log the response
-      console.log(`[FatZebraDeleteStoredCardTool] Response:`, data.successful ? "Success" : "Failed");
+      logger.info({ status: data.successful ? "Success" : "Failed" }, 'Response:');
       
       if (!data.successful) {
         return { 
@@ -75,7 +80,7 @@ const FatZebraDeleteStoredCardTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraDeleteStoredCardTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

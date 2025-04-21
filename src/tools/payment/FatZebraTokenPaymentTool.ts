@@ -1,5 +1,10 @@
 import { z } from "zod";
 import fetch from "node-fetch";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraTokenPaymentTool');
+
 
 // Define input interface
 interface FatZebraTokenPaymentInput {
@@ -94,8 +99,8 @@ const FatZebraTokenPaymentTool = {
       }
 
       // Log the request (redact sensitive data)
-      console.log(`[FatZebraTokenPaymentTool] Making token payment request to: ${baseUrl}/purchases`);
-      console.log(`[FatZebraTokenPaymentTool] Amount: ${amount}, Currency: ${currency || "AUD"}, Reference: ${paymentReference}`);
+      logger.info(`Making token payment request to: ${baseUrl}/purchases`);
+      logger.info(`Amount: ${amount}, Currency: ${currency || "AUD"}, Reference: ${paymentReference}`);
 
       // Make the request to the Fat Zebra API
       const response = await fetch(`${baseUrl}/purchases`, {
@@ -110,7 +115,7 @@ const FatZebraTokenPaymentTool = {
       const data = await response.json() as any;
 
       // Log the response (redact sensitive data)
-      console.log(`[FatZebraTokenPaymentTool] Response:`, data.successful ? "Success" : "Failed");
+      logger.info({ status: data.successful ? "Success" : "Failed" }, 'Response:');
       
       // Check if the response was successful
       if (!data.successful) {
@@ -150,7 +155,7 @@ const FatZebraTokenPaymentTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraTokenPaymentTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

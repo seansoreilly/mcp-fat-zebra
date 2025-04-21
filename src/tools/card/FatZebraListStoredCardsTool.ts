@@ -1,5 +1,10 @@
 import { z } from "zod";
 import fetch from "node-fetch";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraListStoredCardsTool');
+
 
 // Input type for list stored cards requests
 interface FatZebraListStoredCardsInput {
@@ -29,7 +34,7 @@ const FatZebraListStoredCardsTool = {
       const token = process.env.FAT_ZEBRA_TOKEN || "TEST";
       
       const url = `${baseUrl}/customers/${encodeURIComponent(customer_id)}/cards`;
-      console.log(`[FatZebraListStoredCardsTool] Fetching cards from: ${url}`);
+      logger.info(`Fetching cards from: ${url}`);
       
       const response = await fetch(url, {
         method: 'GET',
@@ -42,7 +47,7 @@ const FatZebraListStoredCardsTool = {
       const data = await response.json() as any;
       
       // Log the response
-      console.log(`[FatZebraListStoredCardsTool] Response:`, data.successful ? "Success" : "Failed");
+      logger.info({ status: data.successful ? "Success" : "Failed" }, 'Response:');
       
       if (!data.successful) {
         return { 
@@ -73,7 +78,7 @@ const FatZebraListStoredCardsTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraListStoredCardsTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

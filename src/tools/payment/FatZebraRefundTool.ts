@@ -1,5 +1,9 @@
 import { z } from "zod";
 import fetch from "node-fetch";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraRefundTool');
 
 // Define input interface
 interface FatZebraRefundInput {
@@ -50,8 +54,12 @@ const FatZebraRefundTool = {
       };
 
       // Log the request (redact sensitive data)
-      console.log(`[FatZebraRefundTool] Making refund request to: ${baseUrl}/refunds`);
-      console.log(`[FatZebraRefundTool] Transaction ID: ${transaction_id}, Amount: ${amount}, Reference: ${refundReference}`);
+      logger.info({
+        endpoint: `${baseUrl}/refunds`,
+        transaction_id,
+        amount,
+        reference: refundReference
+      }, 'Making refund request');
 
       // Make the request to the Fat Zebra API
       const response = await fetch(`${baseUrl}/refunds`, {
@@ -66,7 +74,10 @@ const FatZebraRefundTool = {
       const data = await response.json() as any;
 
       // Log the response (redact sensitive data)
-      console.log(`[FatZebraRefundTool] Response:`, data.successful ? "Success" : "Failed");
+      logger.info({
+        successful: data.successful,
+        status: response.status
+      }, 'Received refund response');
       
       // Check if the response was successful
       if (!data.successful) {
@@ -106,7 +117,7 @@ const FatZebraRefundTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraRefundTool] Error:', error);
+      logger.error({ err: error }, 'Error processing refund request');
       
       const errorResult = { 
         successful: false, 

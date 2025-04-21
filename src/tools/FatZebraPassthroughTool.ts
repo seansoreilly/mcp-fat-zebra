@@ -1,5 +1,9 @@
 import { z } from "zod";
 import fetch from "node-fetch";
+import { getLogger } from "../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraPassthroughTool');
 
 // Input type for passthrough requests
 interface FatZebraPassthroughInput {
@@ -74,7 +78,7 @@ const FatZebraPassthroughTool = {
     
     // Log the request (redact sensitive data)
     const logInput = { method, endpoint, headers: undefined, body: body ? "[REDACTED]" : undefined };
-    console.log(`[FatZebraPassthroughTool] Request:`, logInput);
+    logger.info(logInput, 'Request');
     
     try {
       const fetchOptions: any = { method: requestMethod, headers: requestHeaders };
@@ -93,7 +97,14 @@ const FatZebraPassthroughTool = {
       }
       
       // Log the response (redact sensitive data)
-      console.log(`[FatZebraPassthroughTool] Response:`, typeof responseData === "string" ? responseData.slice(0, 500) : responseData);
+      logger.info(
+        {
+          responsePreview: typeof responseData === "string"
+            ? responseData.slice(0, 500)
+            : responseData
+        },
+        'Response'
+      );
       
       const result = {
         successful: response.ok,
@@ -109,7 +120,7 @@ const FatZebraPassthroughTool = {
         }]
       };
     } catch (error) {
-      console.error(`[FatZebraPassthroughTool] Error:`, error);
+      logger.error({ err: error }, 'Error');
       
       const errorResult = { 
         successful: false, 

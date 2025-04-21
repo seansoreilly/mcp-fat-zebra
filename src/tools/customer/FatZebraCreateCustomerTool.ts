@@ -1,5 +1,10 @@
 import { z } from "zod";
 import fetch from "node-fetch";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraCreateCustomerTool');
+
 
 // Define input interface
 interface FatZebraCreateCustomerInput {
@@ -82,7 +87,7 @@ const FatZebraCreateCustomerTool = {
       }
 
       // Log the request (redact sensitive data)
-      console.log(`[FatZebraCreateCustomerTool] Creating customer with reference: ${reference}`);
+      logger.info(`Creating customer with reference: ${reference}`);
 
       // Make the request to the Fat Zebra API
       const response = await fetch(`${baseUrl}/customers`, {
@@ -97,7 +102,7 @@ const FatZebraCreateCustomerTool = {
       const data = await response.json() as any;
 
       // Log the response (redact sensitive data)
-      console.log(`[FatZebraCreateCustomerTool] Response:`, data.successful ? "Success" : "Failed");
+      logger.info({ status: data.successful ? "Success" : "Failed" }, 'Response:');
       
       // Check if the response was successful
       if (!data.successful) {
@@ -129,7 +134,7 @@ const FatZebraCreateCustomerTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraCreateCustomerTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

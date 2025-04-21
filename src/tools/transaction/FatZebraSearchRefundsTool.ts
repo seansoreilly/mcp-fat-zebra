@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraSearchRefundsTool');
 import fetch from "node-fetch";
 
 // Define input interface
@@ -53,7 +57,7 @@ const FatZebraSearchRefundsTool = {
       }
       
       // Log the request
-      console.log(`[FatZebraSearchRefundsTool] Searching refunds with filters: ${JSON.stringify(input)}`);
+      logger.info('Searching refunds with filters: ${JSON.stringify(input)}');
       
       // Make the request to the Fat Zebra API
       const response = await fetch(`${baseUrl}${endpoint}`, {
@@ -68,7 +72,7 @@ const FatZebraSearchRefundsTool = {
       const data = await response.json() as any;
       
       // Log the response
-      console.log(`[FatZebraSearchRefundsTool] Response: ${data.successful ? "Success" : "Failed"}`);
+      logger.info('Response: ${data.successful ? "Success" : "Failed"}');
       
       if (!data.successful) {
         return { 
@@ -103,7 +107,7 @@ const FatZebraSearchRefundsTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraSearchRefundsTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

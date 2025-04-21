@@ -1,5 +1,10 @@
 import { z } from "zod";
 import fetch from "node-fetch";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraTransactionStatusTool');
+
 
 // Define input interface
 interface FatZebraTransactionStatusInput {
@@ -55,7 +60,7 @@ const FatZebraTransactionStatusTool = {
       }
       
       // Log the request
-      console.log(`[FatZebraTransactionStatusTool] Checking status for transaction: ${input.transaction_id || input.reference}`);
+      logger.info('Checking status for transaction: ${input.transaction_id || input.reference}');
       
       // Make the request to the Fat Zebra API
       const response = await fetch(url, {
@@ -70,7 +75,7 @@ const FatZebraTransactionStatusTool = {
       const data = await response.json() as any;
       
       // Log the response
-      console.log(`[FatZebraTransactionStatusTool] Response: ${data.successful ? "Success" : "Failed"}`);
+      logger.info('Response: ${data.successful ? "Success" : "Failed"}');
       
       if (!data.successful) {
         return { 
@@ -101,7 +106,7 @@ const FatZebraTransactionStatusTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraTransactionStatusTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

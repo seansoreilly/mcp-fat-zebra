@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraListBatchesTool');
 import fetch from "node-fetch";
 
 interface FatZebraListBatchesInput {
@@ -49,7 +53,7 @@ const FatZebraListBatchesTool = {
       const url = `${baseUrl}/batches${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
       
       // Log the request
-      console.log(`[FatZebraListBatchesTool] Listing batches with filters: ${queryParams.toString() || 'none'}`);
+      logger.info(`Listing batches with filters: ${queryParams.toString() || 'none'}`);
       
       // Make the request to the Fat Zebra API
       const response = await fetch(url, {
@@ -63,7 +67,7 @@ const FatZebraListBatchesTool = {
       const data = await response.json() as any;
       
       // Log the response status
-      console.log(`[FatZebraListBatchesTool] Response status: ${response.status}, Success: ${data.successful}`);
+      logger.info(`Response status: ${response.status}, Success: ${data.successful}`);
       
       // Check if the response was successful
       if (!data.successful) {
@@ -95,7 +99,7 @@ const FatZebraListBatchesTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraListBatchesTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

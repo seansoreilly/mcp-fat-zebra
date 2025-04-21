@@ -1,5 +1,10 @@
 import { z } from "zod";
 import fetch from "node-fetch";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraUpdateCustomerTool');
+
 
 // Define input interface
 interface FatZebraUpdateCustomerInput {
@@ -48,7 +53,7 @@ const FatZebraUpdateCustomerTool = {
       if (metadata) requestBody.metadata = metadata;
       
       // Log the request (redact sensitive data)
-      console.log(`[FatZebraUpdateCustomerTool] Updating customer with ID: ${customer_id}`);
+      logger.info(`Updating customer with ID: ${customer_id}`);
       
       // Construct the URL with the customer ID
       const url = `${baseUrl}/customers/${encodeURIComponent(customer_id)}`;
@@ -66,7 +71,7 @@ const FatZebraUpdateCustomerTool = {
       const data = await response.json() as any;
 
       // Log the response
-      console.log(`[FatZebraUpdateCustomerTool] Response:`, data.successful ? "Success" : "Failed");
+      logger.info({ status: data.successful ? "Success" : "Failed" }, 'Response:');
       
       // Check if the response was successful
       if (!data.successful) {
@@ -98,7 +103,7 @@ const FatZebraUpdateCustomerTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraUpdateCustomerTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

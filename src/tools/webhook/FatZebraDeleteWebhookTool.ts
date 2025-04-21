@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraDeleteWebhookTool');
 import fetch from "node-fetch";
 import { checkWebhooksApiAvailability, getWebhooksApiUnavailableError } from "./FatZebraWebhookUtils.js";
 
@@ -40,7 +44,7 @@ const FatZebraDeleteWebhookTool = {
       }
       
       // Log the request
-      console.log(`[FatZebraDeleteWebhookTool] Deleting webhook with ID: ${input.id}`);
+      logger.info('Deleting webhook with ID: ${input.id}');
       
       // Make the request to the Fat Zebra API
       const url = `${baseUrl}/web_hooks/${encodeURIComponent(input.id)}`;
@@ -56,7 +60,7 @@ const FatZebraDeleteWebhookTool = {
       const data = await response.json() as any;
       
       // Log the response
-      console.log(`[FatZebraDeleteWebhookTool] Response: ${data.successful ? "Success" : "Failed"}`);
+      logger.info('Response: ${data.successful ? "Success" : "Failed"}');
       
       if (!data.successful) {
         return { 
@@ -85,7 +89,7 @@ const FatZebraDeleteWebhookTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraDeleteWebhookTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

@@ -1,5 +1,10 @@
 import { z } from "zod";
 import fetch from "node-fetch";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebra3DSecureTool');
+
 
 // Define input interface
 interface FatZebra3DSecureInput {
@@ -118,8 +123,8 @@ const FatZebra3DSecureTool = {
       }
 
       // Log the request (redact sensitive data)
-      console.log(`[FatZebra3DSecureTool] Making 3DS payment request to: ${baseUrl}/purchases`);
-      console.log(`[FatZebra3DSecureTool] Amount: ${amount}, Currency: ${currency || "AUD"}, Reference: ${paymentReference}`);
+      logger.info(`Making 3DS payment request to: ${baseUrl}/purchases`);
+      logger.info(`Amount: ${amount}, Currency: ${currency || "AUD"}, Reference: ${paymentReference}`);
 
       // Make the request to the Fat Zebra API
       // Add 3D Secure parameters based on documentation
@@ -146,7 +151,7 @@ const FatZebra3DSecureTool = {
       const data = await response.json() as any;
 
       // Log the response (redact sensitive data)
-      console.log(`[FatZebra3DSecureTool] Response:`, data.successful ? "Success" : "Failed");
+      logger.info({ status: data.successful ? "Success" : "Failed" }, 'Response:');
       
       // Check if the response was successful
       if (!data.successful) {
@@ -189,7 +194,7 @@ const FatZebra3DSecureTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebra3DSecureTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

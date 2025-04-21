@@ -1,5 +1,10 @@
 import { z } from "zod";
 import fetch from "node-fetch";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraReconciliationReportTool');
+
 
 // Define input interface
 interface FatZebraReconciliationReportInput {
@@ -35,7 +40,7 @@ const FatZebraReconciliationReportTool = {
       const url = `${baseUrl}/settlements/${encodeURIComponent(date)}${params.toString() ? '?' + params.toString() : ''}`;
       
       // Log the request
-      console.log(`[FatZebraReconciliationReportTool] Retrieving reconciliation report for date: ${date}, format: ${format || 'json'}`);
+      logger.info(`Retrieving reconciliation report for date: ${date}, format: ${format || 'json'}`);
       
       // Make the request to the Fat Zebra API
       const response = await fetch(url, {
@@ -52,7 +57,7 @@ const FatZebraReconciliationReportTool = {
         const text = await response.text();
         
         // Log the response
-        console.log(`[FatZebraReconciliationReportTool] Response: ${response.ok ? "Success" : "Failed"}`);
+        logger.info(`Response: ${response.ok ? "Success" : "Failed"}`);
         
         if (!text || response.status >= 400) {
           return { 
@@ -85,7 +90,7 @@ const FatZebraReconciliationReportTool = {
         const data = await response.json() as any;
         
         // Log the response
-        console.log(`[FatZebraReconciliationReportTool] Response: ${data.successful ? "Success" : "Failed"}`);
+        logger.info(`Response: ${data.successful ? "Success" : "Failed"}`);
         
         if (!data.successful) {
           return { 
@@ -117,7 +122,7 @@ const FatZebraReconciliationReportTool = {
         };
       }
     } catch (error) {
-      console.error('[FatZebraReconciliationReportTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

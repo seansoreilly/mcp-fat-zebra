@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraStoreCardTool');
 import fetch from "node-fetch";
 
 // Input type for store card requests
@@ -55,7 +59,7 @@ const FatZebraStoreCardTool = {
       
       // Use the purchases endpoint which returns a token
       const url = `${baseUrl}/purchases`;
-      console.log(`[FatZebraStoreCardTool] Making tokenization request to: ${url}`);
+      logger.info(`Making tokenization request to: ${url}`);
       
       const response = await fetch(url, {
         method: 'POST',
@@ -69,7 +73,7 @@ const FatZebraStoreCardTool = {
       const data = await response.json() as any;
       
       // Log the response (redact sensitive data)
-      console.log(`[FatZebraStoreCardTool] Response:`, data.successful ? "Success" : "Failed");
+      logger.info({ status: data.successful ? "Success" : "Failed" }, 'Response:');
       
       if (!data.successful) {
         return { 
@@ -113,7 +117,7 @@ const FatZebraStoreCardTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraStoreCardTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

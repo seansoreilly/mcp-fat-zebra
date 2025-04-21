@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraTransactionHistoryTool');
 import fetch from "node-fetch";
 
 // Define input interface
@@ -33,7 +37,7 @@ const FatZebraTransactionHistoryTool = {
       const url = `${baseUrl}/purchases/${encodeURIComponent(transaction_id)}`;
       
       // Log the request
-      console.log(`[FatZebraTransactionHistoryTool] Retrieving history for transaction: ${transaction_id}`);
+      logger.info('Retrieving history for transaction: ${transaction_id}');
       
       // Make the request to the Fat Zebra API
       const response = await fetch(url, {
@@ -48,7 +52,7 @@ const FatZebraTransactionHistoryTool = {
       const data = await response.json() as any;
       
       // Log the response
-      console.log(`[FatZebraTransactionHistoryTool] Response: ${data.successful ? "Success" : "Failed"}`);
+      logger.info('Response: ${data.successful ? "Success" : "Failed"}');
       
       if (!data.successful) {
         return { 
@@ -79,7 +83,7 @@ const FatZebraTransactionHistoryTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraTransactionHistoryTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

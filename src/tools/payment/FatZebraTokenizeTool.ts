@@ -1,5 +1,10 @@
 import { z } from "zod";
 import fetch from "node-fetch";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraTokenizeTool');
+
 
 // Define input interface
 interface FatZebraTokenizeInput {
@@ -54,8 +59,8 @@ const FatZebraTokenizeTool = {
       const cardHolder = card_holder || defaultCardHolder;
 
       // Log the request (redact sensitive data)
-      console.log(`[FatZebraTokenizeTool] Making tokenization request to: ${baseUrl}/credit_cards`);
-      console.log(`[FatZebraTokenizeTool] Card Holder: ${cardHolder}`);
+      logger.info(`Making tokenization request to: ${baseUrl}/credit_cards`);
+      logger.info(`Card Holder: ${cardHolder}`);
 
       // Tokenization can be done directly using the /credit_cards endpoint
       // This creates a token without charging the card
@@ -79,7 +84,7 @@ const FatZebraTokenizeTool = {
       const data = await response.json() as any;
 
       // Log the response (redact sensitive data)
-      console.log(`[FatZebraTokenizeTool] Response:`, data.successful ? "Success" : "Failed");
+      logger.info({ status: data.successful ? "Success" : "Failed" }, 'Response:');
       
       // Check if the response was successful
       if (!data.successful) {
@@ -117,7 +122,7 @@ const FatZebraTokenizeTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraTokenizeTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

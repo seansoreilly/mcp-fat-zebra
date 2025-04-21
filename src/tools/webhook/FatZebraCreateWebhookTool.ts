@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraCreateWebhookTool');
 import fetch from "node-fetch";
 import { checkWebhooksApiAvailability, getWebhooksApiUnavailableError } from "./FatZebraWebhookUtils.js";
 
@@ -46,7 +50,7 @@ const FatZebraCreateWebhookTool = {
       }
       
       // Log the request
-      console.log(`[FatZebraCreateWebhookTool] Creating webhook: ${input.name} at ${input.address}`);
+      logger.info('Creating webhook: ${input.name} at ${input.address}');
       
       // Make the request to the Fat Zebra API
       const url = `${baseUrl}/web_hooks`;
@@ -68,7 +72,7 @@ const FatZebraCreateWebhookTool = {
       const data = await response.json() as any;
       
       // Log the response
-      console.log(`[FatZebraCreateWebhookTool] Response: ${data.successful ? "Success" : "Failed"}`);
+      logger.info('Response: ${data.successful ? "Success" : "Failed"}');
       
       if (!data.successful) {
         return { 
@@ -97,7 +101,7 @@ const FatZebraCreateWebhookTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraCreateWebhookTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 

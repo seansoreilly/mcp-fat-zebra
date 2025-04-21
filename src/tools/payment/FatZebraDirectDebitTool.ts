@@ -1,5 +1,10 @@
 import { z } from "zod";
 import fetch from "node-fetch";
+import { getLogger } from "../../utils/logger.js";
+
+// Create tool-specific logger
+const logger = getLogger('FatZebraDirectDebitTool');
+
 
 // Define input interface
 interface FatZebraDirectDebitInput {
@@ -115,8 +120,8 @@ const FatZebraDirectDebitTool = {
       }
 
       // Log the request (redact sensitive data)
-      console.log(`[FatZebraDirectDebitTool] Making direct debit request to: ${baseUrl}/direct_debits`);
-      console.log(`[FatZebraDirectDebitTool] Amount: ${amount}, Reference: ${debitReference}, Account Name: ${accountName}`);
+      logger.info(`Making direct debit request to: ${baseUrl}/direct_debits`);
+      logger.info(`Amount: ${amount}, Reference: ${debitReference}, Account Name: ${accountName}`);
 
       // Make the request to the Fat Zebra API
       const response = await fetch(`${baseUrl}/direct_debits`, {
@@ -131,7 +136,7 @@ const FatZebraDirectDebitTool = {
       const data = await response.json() as any;
 
       // Log the response (redact sensitive data)
-      console.log(`[FatZebraDirectDebitTool] Response:`, data.successful ? "Success" : "Failed");
+      logger.info({ status: data.successful ? "Success" : "Failed" }, 'Response:');
       
       // Check if the response was successful
       if (!data.successful) {
@@ -176,7 +181,7 @@ const FatZebraDirectDebitTool = {
         }]
       };
     } catch (error) {
-      console.error('[FatZebraDirectDebitTool] Error:', error);
+      logger.error({ err: error }, 'Error:');
       
       const errorResult = { 
         successful: false, 
