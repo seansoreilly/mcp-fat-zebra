@@ -48,7 +48,7 @@ const FatZebraPaymentTool = {
     card_number: z.string().describe("The customer's credit card number"),
     card_expiry: z.string().describe("The card expiry date in the format MM/YYYY (e.g., 05/2026)"),
     card_cvv: z.string().describe("The card verification value (CVV/CVC) code"),
-    reference: z.string().describe("A unique reference for this transaction. If you are generating this reference, ensure it is unique by including 6 characters from a random GUID."),
+    reference: z.string().describe("A unique reference for this transaction. IMPORTANT: If you are generating this reference, ensure it is unique by appending 6 characters from a random GUID."),
     card_holder: z.string().optional().describe("The cardholder's name (optional)"),
     customer_email: z.string().email().optional().describe("The customer's email address (optional)"),
     customer_ip: z.string().optional().default("127.0.0.1").describe("The customer's IP address (optional, defaults to 127.0.0.1)"),
