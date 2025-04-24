@@ -14,6 +14,9 @@ export default class HelpDocumentation {
 
   async read(): Promise<{ uri: string; content: string; contentType: string }[]> {
     const possiblePaths = [
+      path.resolve(process.cwd(), "documentation"),
+      path.resolve(process.cwd(), "src", "../documentation"),
+      path.resolve(process.cwd(), "dist", "../documentation"),
       path.resolve(process.cwd(), "docs"),
       path.resolve(process.cwd(), "src", "../docs"),
       path.resolve(process.cwd(), "dist", "../docs"),
