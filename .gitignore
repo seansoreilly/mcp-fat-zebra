@@ -53,3 +53,8 @@ coverage/
 __pycache__/
 *.py[cod]
 *$py.class 
+
+testing/ 
+fixes/ 
+docs/ 
+tests/
