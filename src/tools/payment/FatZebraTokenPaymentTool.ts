@@ -1,34 +1,31 @@
 import { z } from "zod";
-import fetch from "node-fetch";
 import { getLogger } from "../../utils/logger.js";
+import { 
+  fatZebraApi, 
+  FIELD_NAMES, 
+  TEST_DATA,
+  ENDPOINTS,
+  buildBasePaymentRequest,
+  addTokenDetails,
+  validateRequest,
+  handleFatZebraResponse,
+  handleApiError
+} from "../../utils/api/index.js";
 
 // Create tool-specific logger
 const logger = getLogger('FatZebraTokenPaymentTool');
 
-
-// Define input interface
+// Define input interface with standardized naming
 interface FatZebraTokenPaymentInput {
   amount: number;
   currency?: string;
   card_token: string;
   reference: string;
-  cvv: string;
+  card_cvv?: string;  // Primary field name for consistency
+  cvv?: string;       // Secondary field name for backward compatibility
   card_holder: string;
   customer_email?: string;
   customer_ip?: string;
-  capture?: boolean;
-}
-
-// Define request body interface with all possible properties
-interface TokenPaymentRequestBody {
-  amount: number;
-  currency?: string;
-  card_token: string;
-  reference: string;
-  customer_ip?: string;
-  cvv: string;
-  card_holder: string;
-  customer_email?: string;
   capture?: boolean;
 }
 
@@ -46,7 +43,9 @@ const FatZebraTokenPaymentTool = {
     currency: z.string().optional().default("AUD").describe("The three-letter ISO currency code (default: AUD)"),
     card_token: z.string().describe("The tokenized card to charge"),
     reference: z.string().describe("A unique reference for this transaction"),
-    cvv: z.string().describe("The card verification value (CVV/CVC) code (required)"),
+    // Accept both card_cvv (preferred) and cvv (legacy) but require one of them
+    card_cvv: z.string().optional().describe("The card verification value (CVV/CVC) code"),
+    cvv: z.string().optional().describe("Legacy field: use card_cvv instead when possible"),
     card_holder: z.string().describe("The cardholder's name (required)"),
     customer_email: z.string().email().optional().describe("The customer's email address (optional)"),
     customer_ip: z.string().optional().default("127.0.0.1").describe("The customer's IP address (optional, defaults to 127.0.0.1)"),
@@ -54,122 +53,93 @@ const FatZebraTokenPaymentTool = {
   },
   
   // Execute function that will be called when the tool is used
-  execute: async ({ amount, currency, card_token, reference, cvv, card_holder, customer_email, customer_ip, capture }: FatZebraTokenPaymentInput) => {
+  execute: async ({ 
+    amount, 
+    currency, 
+    card_token, 
+    reference, 
+    card_cvv,
+    cvv, 
+    card_holder, 
+    customer_email, 
+    customer_ip, 
+    capture 
+  }: FatZebraTokenPaymentInput) => {
     try {
-      // Fat Zebra API configuration
-      const baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.pmnts-sandbox.io/v1.0";
-      const username = process.env.FAT_ZEBRA_USERNAME || "TEST";
-      const token = process.env.FAT_ZEBRA_TOKEN || "TEST";
+      logger.info('Starting token payment processing');
       
-      // Default values to ensure API acceptance
-      const defaultCardHolder = "Test User";
-      const defaultCVV = "123";
+      // If card_cvv is not provided but cvv is, warn about using the legacy field
+      if (!card_cvv && cvv) {
+        logger.warn('Using legacy "cvv" field. Please use "card_cvv" in the future for consistency.');
+      } else if (!card_cvv && !cvv) {
+        logger.warn('No CVV provided. This may fail if the Fat Zebra API requires it.');
+      }
       
-      // Always ensure CVV is provided - now required by interface
-      const cardCVV = cvv || defaultCVV;
-
-      // Always ensure card_holder is provided - now required by interface
-      const cardHolder = card_holder || defaultCardHolder;
-
-      // Create a unique reference with timestamp AND random string to ensure uniqueness
-      const uniqueId = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
-      const paymentReference = reference || `token-${uniqueId}`;
-
-      // Prepare the request body for the Fat Zebra API
-      const requestBody: TokenPaymentRequestBody = {
-        amount: amount,
-        card_token: card_token,
-        reference: paymentReference,
-        cvv: cardCVV,
-        card_holder: cardHolder,
-        currency: currency || "AUD", // Always include currency
-      };
-
-      // Add optional fields only if provided
-      if (customer_ip) {
-        requestBody.customer_ip = customer_ip;
-      }
-
-      if (customer_email) {
-        requestBody.customer_email = customer_email;
-      }
-
-      if (capture !== undefined) {
-        requestBody.capture = capture;
-      }
-
-      // Log the request (redact sensitive data)
-      logger.info(`Making token payment request to: ${baseUrl}/purchases`);
-      logger.info(`Amount: ${amount}, Currency: ${currency || "AUD"}, Reference: ${paymentReference}`);
-
-      // Make the request to the Fat Zebra API
-      const response = await fetch(`${baseUrl}/purchases`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${Buffer.from(`${username}:${token}`).toString('base64')}`,
-        },
-        body: JSON.stringify(requestBody),
+      // Build the base request body
+      let requestBody = buildBasePaymentRequest({
+        amount,
+        currency,
+        reference,
+        customer_ip,
+        customer_email,
+        capture,
+        card_holder
       });
-
-      const data = await response.json() as any;
-
-      // Log the response (redact sensitive data)
-      logger.info({ status: data.successful ? "Success" : "Failed" }, 'Response:');
       
-      // Check if the response was successful
-      if (!data.successful) {
+      // Add token details to the request
+      requestBody = addTokenDetails(requestBody, {
+        card_token,
+        card_cvv,
+        cvv
+      });
+      
+      // Validate required fields before making the request
+      const requiredFields = [
+        FIELD_NAMES.AMOUNT,
+        FIELD_NAMES.REFERENCE,
+        FIELD_NAMES.CARD_TOKEN,
+        FIELD_NAMES.CARD_HOLDER
+      ];
+
+      // CVV is required by Fat Zebra API
+      if (!card_cvv && !cvv) {
+        logger.error('Card verification code is required but not provided');
         return { 
           content: [{ 
             type: "text", 
             text: JSON.stringify({
               successful: false,
-              status: response.status,
+              status: 400,
               response: null,
-              errors: data.errors || ["Unknown error from Fat Zebra API"]
+              errors: ["Card verification code (card_cvv) is required"]
             })
           }]
         };
       }
-
-      // Return the response from Fat Zebra
-      const result = {
-        successful: data.successful,
-        status: response.status,
-        response: {
-          transaction_id: data.response.transaction_id,
-          amount: data.response.amount,
-          reference: data.response.reference,
-          message: data.response.message,
-          authorization: data.response.response_code,
-          currency: data.response.currency,
-          timestamp: data.response.transaction_date,
-        },
-        errors: undefined
-      };
       
-      return { 
-        content: [{ 
-          type: "text", 
-          text: JSON.stringify(result)
-        }]
-      };
+      const validation = validateRequest(requestBody, requiredFields);
+      if (!validation.isValid) {
+        logger.warn({ errors: validation.errors }, 'Validation failed for token payment request');
+        return { 
+          content: [{ 
+            type: "text", 
+            text: JSON.stringify({
+              successful: false,
+              status: 400,
+              response: null,
+              errors: validation.errors
+            })
+          }]
+        };
+      }
+      
+      // Make the API request
+      const { response, data } = await fatZebraApi.makeRequest(ENDPOINTS.PURCHASES, 'POST', requestBody);
+      
+      // Process and return the response
+      return handleFatZebraResponse(response, data);
     } catch (error) {
-      logger.error({ err: error }, 'Error:');
-      
-      const errorResult = { 
-        successful: false, 
-        status: 500, 
-        response: null, 
-        errors: [(error instanceof Error ? error.message : String(error))] 
-      };
-      
-      return { 
-        content: [{ 
-          type: "text", 
-          text: JSON.stringify(errorResult)
-        }]
-      };
+      return handleApiError(error);
     }
   }
 };

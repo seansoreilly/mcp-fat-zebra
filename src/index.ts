@@ -34,8 +34,8 @@ function registerTool(tool: Tool) {
 }
 
 // Function to recursively find all tool files in a directory
-async function findToolFiles(dir) {
-  const files = [];
+async function findToolFiles(dir: string): Promise<string[]> {
+  const files: string[] = [];
   
   // Convert to absolute path if needed
   const __filename = fileURLToPath(import.meta.url);

@@ -1,6 +1,16 @@
 import { z } from "zod";
-import fetch from "node-fetch";
 import { getLogger } from "../../utils/logger.js";
+import { 
+  fatZebraApi, 
+  FIELD_NAMES, 
+  TEST_DATA,
+  ENDPOINTS,
+  buildBasePaymentRequest,
+  addCardDetails,
+  validateRequest,
+  handleFatZebraResponse,
+  handleApiError
+} from "../../utils/api/index.js";
 
 // Create tool-specific logger
 const logger = getLogger('FatZebraPaymentTool');
@@ -19,20 +29,6 @@ interface FatZebraPaymentInput {
   capture?: boolean;
 }
 
-// Define request body interface with all possible properties
-interface PaymentRequestBody {
-  amount: number;
-  currency?: string;
-  card_number: string;
-  card_expiry: string;
-  card_cvv: string;
-  reference: string;
-  customer_ip?: string;
-  card_holder?: string;
-  customer_email?: string;
-  capture?: boolean;
-}
-
 /**
  * Fat Zebra Payment Tool
  * Process a credit card payment using the Fat Zebra payment gateway
@@ -47,7 +43,7 @@ const FatZebraPaymentTool = {
     currency: z.string().default("AUD").describe("The three-letter ISO currency code (default: AUD)"),
     card_number: z.string().describe("The customer's credit card number"),
     card_expiry: z.string().describe("The card expiry date in the format MM/YYYY (e.g., 05/2026)"),
-    card_cvv: z.string().describe("The card verification value (CVV/CVC) code"),
+    card_cvv: z.string().min(1, "Card verification code is required").describe("The card verification value (CVV/CVC) code"),
     reference: z.string().describe("A unique reference for this transaction. IMPORTANT: If you are generating this reference, ensure it is unique by appending 6 characters from a random GUID."),
     card_holder: z.string().optional().describe("The cardholder's name (optional)"),
     customer_email: z.string().email().optional().describe("The customer's email address (optional)"),
@@ -56,140 +52,85 @@ const FatZebraPaymentTool = {
   },
   
   // Execute function that will be called when the tool is used
-  execute: async ({ amount, currency, card_number, card_expiry, card_cvv, reference, card_holder, customer_email, customer_ip, capture }: FatZebraPaymentInput) => {
+  execute: async ({ 
+    amount, 
+    currency, 
+    card_number, 
+    card_expiry, 
+    card_cvv, 
+    reference, 
+    card_holder, 
+    customer_email, 
+    customer_ip, 
+    capture 
+  }: FatZebraPaymentInput) => {
     try {
-      // Fat Zebra API configuration
-      const baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.pmnts-sandbox.io/v1.0";
-      const username = process.env.FAT_ZEBRA_USERNAME || "TEST";
-      const token = process.env.FAT_ZEBRA_TOKEN || "TEST";
+      logger.info('Starting credit card payment processing');
       
-      // Default test card that works with Fat Zebra - using the one reported to work consistently
-      const defaultTestCard = "5123456789012346";
-      const defaultExpiryDate = "05/2026";
-      const defaultCVV = "123";
-      const defaultCardHolder = "Test User";
+      // Use the successful test card in test mode if no card is provided
+      const isTestMode = fatZebraApi.isTestMode();
+      const cardNumber = isTestMode && !card_number ? TEST_DATA.CARD_NUMBER : card_number;
       
-      // Use the successful test card if we're in test mode and no card is provided
-      const cardNumber = username === "TEST" && !card_number ? 
-        defaultTestCard : card_number;
+      // Use the successful expiry date in test mode if using the default test card
+      const cardExpiry = isTestMode && cardNumber === TEST_DATA.CARD_NUMBER && !card_expiry ? 
+        TEST_DATA.CARD_EXPIRY : card_expiry;
       
-      // Use the successful expiry date if we're in test mode and using the default test card
-      const cardExpiry = username === "TEST" && cardNumber === defaultTestCard ? 
-        defaultExpiryDate : card_expiry;
-      
-      // Always ensure CVV is provided - required by Fat Zebra
-      const cardCVV = card_cvv || defaultCVV;
+      // Never use default CVV - always require it
+      const cardCVV = card_cvv;
       
       // Always ensure card_holder is provided as Fat Zebra requires it
-      const cardHolder = card_holder || defaultCardHolder;
+      const cardHolder = card_holder || TEST_DATA.CARD_HOLDER;
       
-      // Create a simple reference if none provided
-      const paymentReference = reference || `ref-${Date.now()}`;
+      // Build the base request body
+      let requestBody = buildBasePaymentRequest({
+        amount,
+        currency,
+        reference,
+        customer_ip,
+        customer_email,
+        capture,
+        card_holder: cardHolder
+      });
       
-      // Prepare the request body for the Fat Zebra API
-      const requestBody: PaymentRequestBody = {
-        amount: amount,
+      // Add card details to the request
+      requestBody = addCardDetails(requestBody, {
         card_number: cardNumber,
         card_expiry: cardExpiry,
-        card_cvv: cardCVV,
-        reference: paymentReference,
-        card_holder: cardHolder,
-        currency: currency || "AUD",
-      };
-
-      // Add optional fields only if provided
-      if (customer_ip) {
-        requestBody.customer_ip = customer_ip;
-      }
-      
-      if (customer_email) {
-        requestBody.customer_email = customer_email;
-      }
-      
-      if (capture !== undefined) {
-        requestBody.capture = capture;
-      }
-
-      // Log the request (redact sensitive data)
-      logger.info({
-        endpoint: `${baseUrl}/purchases`,
-        amount,
-        currency: currency || "AUD",
-        reference: paymentReference
-      }, 'Making payment request');
-
-      // Make the request to the Fat Zebra API
-      const response = await fetch(`${baseUrl}/purchases`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${Buffer.from(`${username}:${token}`).toString('base64')}`,
-        },
-        body: JSON.stringify(requestBody),
+        card_cvv: cardCVV
       });
-
-      const data = await response.json() as any;
-
-      // Log the response (redact sensitive data)
-      logger.info({
-        successful: data.successful,
-        status: response.status
-      }, 'Received payment response');
       
-      // Check if the response was successful
-      if (!data.successful) {
+      // Validate required fields before making the request
+      const requiredFields = [
+        FIELD_NAMES.AMOUNT,
+        FIELD_NAMES.REFERENCE,
+        FIELD_NAMES.CARD_NUMBER,
+        FIELD_NAMES.CARD_EXPIRY,
+        FIELD_NAMES.CARD_CVV
+      ];
+      
+      const validation = validateRequest(requestBody, requiredFields);
+      if (!validation.isValid) {
+        logger.warn({ errors: validation.errors }, 'Validation failed for payment request');
         return { 
           content: [{ 
             type: "text", 
             text: JSON.stringify({
               successful: false,
-              status: response.status,
+              status: 400,
               response: null,
-              errors: data.errors || ["Unknown error from Fat Zebra API"]
+              errors: validation.errors
             })
           }]
         };
       }
-
-      // Return the response from Fat Zebra
-      const result = {
-        successful: data.successful,
-        status: response.status,
-        response: {
-          transaction_id: data.response.transaction_id,
-          card_token: data.response.card_token,
-          amount: data.response.amount,
-          reference: data.response.reference,
-          message: data.response.message,
-          authorization: data.response.response_code,
-          currency: data.response.currency,
-          timestamp: data.response.transaction_date,
-        },
-        errors: undefined
-      };
       
-      return { 
-        content: [{ 
-          type: "text", 
-          text: JSON.stringify(result)
-        }]
-      };
+      // Make the API request
+      const { response, data } = await fatZebraApi.makeRequest(ENDPOINTS.PURCHASES, 'POST', requestBody);
+      
+      // Process and return the response
+      return handleFatZebraResponse(response, data);
     } catch (error) {
-      logger.error({ err: error }, 'Error processing payment request');
-      
-      const errorResult = { 
-        successful: false, 
-        status: 500, 
-        response: null, 
-        errors: [(error instanceof Error ? error.message : String(error))] 
-      };
-      
-      return { 
-        content: [{ 
-          type: "text", 
-          text: JSON.stringify(errorResult)
-        }]
-      };
+      return handleApiError(error);
     }
   }
 };

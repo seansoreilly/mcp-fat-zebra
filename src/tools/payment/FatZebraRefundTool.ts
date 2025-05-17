@@ -1,19 +1,19 @@
 import { z } from "zod";
-import fetch from "node-fetch";
 import { getLogger } from "../../utils/logger.js";
+import { 
+  fatZebraApi, 
+  FIELD_NAMES, 
+  ENDPOINTS,
+  validateRequest,
+  handleFatZebraResponse,
+  handleApiError
+} from "../../utils/api/index.js";
 
 // Create tool-specific logger
 const logger = getLogger('FatZebraRefundTool');
 
 // Define input interface
 interface FatZebraRefundInput {
-  transaction_id: string;
-  amount: number;
-  reference: string;
-}
-
-// Define request body interface
-interface RefundRequestBody {
   transaction_id: string;
   amount: number;
   reference: string;
@@ -37,101 +37,74 @@ const FatZebraRefundTool = {
   // Execute function that will be called when the tool is used
   execute: async ({ transaction_id, amount, reference }: FatZebraRefundInput) => {
     try {
-      // Fat Zebra API configuration
-      const baseUrl = process.env.FAT_ZEBRA_API_URL || "https://gateway.pmnts-sandbox.io/v1.0";
-      const username = process.env.FAT_ZEBRA_USERNAME || "TEST";
-      const token = process.env.FAT_ZEBRA_TOKEN || "TEST";
+      logger.info('Starting refund processing');
       
       // Generate a unique reference if none was provided
       const uniqueId = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
       const refundReference = reference || `refund-${uniqueId}`;
 
       // Prepare the request body for the Fat Zebra API
-      const requestBody: RefundRequestBody = {
+      const requestBody = {
         transaction_id: transaction_id,
         amount: amount,
         reference: refundReference,
       };
 
-      // Log the request (redact sensitive data)
-      logger.info({
-        endpoint: `${baseUrl}/refunds`,
-        transaction_id,
-        amount,
-        reference: refundReference
-      }, 'Making refund request');
-
-      // Make the request to the Fat Zebra API
-      const response = await fetch(`${baseUrl}/refunds`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${Buffer.from(`${username}:${token}`).toString('base64')}`,
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      const data = await response.json() as any;
-
-      // Log the response (redact sensitive data)
-      logger.info({
-        successful: data.successful,
-        status: response.status
-      }, 'Received refund response');
+      // Validate required fields before making the request
+      const requiredFields = [
+        'transaction_id',
+        'amount',
+        'reference'
+      ];
       
-      // Check if the response was successful
-      if (!data.successful) {
+      const validation = validateRequest(requestBody, requiredFields);
+      if (!validation.isValid) {
+        logger.warn({ errors: validation.errors }, 'Validation failed for refund request');
         return { 
           content: [{ 
             type: "text", 
             text: JSON.stringify({
               successful: false,
-              status: response.status,
+              status: 400,
               response: null,
-              errors: data.errors || ["Unknown error from Fat Zebra API"]
+              errors: validation.errors
             })
           }]
         };
       }
-
-      // Return the response from Fat Zebra
-      const result = {
-        successful: data.successful,
-        status: response.status,
-        response: {
-          refund_id: data.response.id,
-          amount: data.response.amount,
-          reference: data.response.reference,
-          transaction_id: data.response.transaction_id,
-          message: data.response.message,
-          currency: data.response.currency,
-          timestamp: data.response.created_at,
-        },
-        errors: undefined
-      };
       
-      return { 
-        content: [{ 
-          type: "text", 
-          text: JSON.stringify(result)
-        }]
-      };
+      // Make the API request
+      const { response, data } = await fatZebraApi.makeRequest(ENDPOINTS.REFUNDS, 'POST', requestBody);
+      
+      // Handle successful response differently for refunds
+      if (data.successful) {
+        const result = {
+          successful: data.successful,
+          status: response.status,
+          response: {
+            refund_id: data.response?.id || "",
+            amount: data.response?.amount || 0,
+            reference: data.response?.reference || "",
+            transaction_id: data.response?.transaction_id || "",
+            message: data.response?.message || "",
+            currency: data.response?.currency || "",
+            timestamp: data.response?.created_at || "",
+          },
+          errors: undefined
+        };
+        
+        return { 
+          content: [{ 
+            type: "text", 
+            text: JSON.stringify(result)
+          }]
+        };
+      }
+      
+      // Process and return error response
+      return handleFatZebraResponse(response, data);
     } catch (error) {
-      logger.error({ err: error }, 'Error processing refund request');
-      
-      const errorResult = { 
-        successful: false, 
-        status: 500, 
-        response: null, 
-        errors: [(error instanceof Error ? error.message : String(error))] 
-      };
-      
-      return { 
-        content: [{ 
-          type: "text", 
-          text: JSON.stringify(errorResult)
-        }]
-      };
+      return handleApiError(error);
     }
   }
 };
