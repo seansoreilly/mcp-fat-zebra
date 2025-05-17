@@ -1,9 +1,40 @@
 import { z } from "zod";
-import fetch from "node-fetch";
+import fetch, { RequestInit } from "node-fetch";
 import { getLogger } from "../utils/logger.js";
 
 // Create tool-specific logger
 const logger = getLogger('FatZebraPassthroughTool');
+
+// List of known sensitive keys for redaction
+const SENSITIVE_KEYS = [
+  "token", "card_token", "card_number", "cvv", "card_holder", "expiry_date",
+  "account_name", "account_number", "bsb", "password", "secret", "api_key",
+  "email", "phone", "dob", "date_of_birth", "address", "customer_ip",
+  // Add more keys as identified from API responses
+];
+
+// Recursive function to redact sensitive data from an object or array
+function redactSensitiveData(data: any): any {
+  if (typeof data !== 'object' || data === null) {
+    return data;
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(item => redactSensitiveData(item));
+  }
+
+  const redactedObject: { [key: string]: any } = {};
+  for (const key in data) {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      if (SENSITIVE_KEYS.includes(key.toLowerCase())) {
+        redactedObject[key] = "[REDACTED]";
+      } else {
+        redactedObject[key] = redactSensitiveData(data[key]);
+      }
+    }
+  }
+  return redactedObject;
+}
 
 // Input type for passthrough requests
 interface FatZebraPassthroughInput {
@@ -31,9 +62,9 @@ const FatZebraPassthroughTool = {
   },
   
   // Execute function that will be called when the tool is used
-  execute: async ({ method, endpoint, body, headers }: FatZebraPassthroughInput) => {
+  execute: async (input: FatZebraPassthroughInput) => {
     // Validate endpoint
-    if (!endpoint.startsWith("/")) {
+    if (!input.endpoint.startsWith("/")) {
       return { 
         content: [{ 
           type: "text", 
@@ -47,7 +78,7 @@ const FatZebraPassthroughTool = {
       };
     }
     
-    if (endpoint.includes("..")) {
+    if (input.endpoint.includes("..")) {
       return { 
         content: [{ 
           type: "text", 
@@ -66,24 +97,24 @@ const FatZebraPassthroughTool = {
     const username = process.env.FAT_ZEBRA_USERNAME || "TEST";
     const token = process.env.FAT_ZEBRA_TOKEN || "TEST";
     
-    const url = `${baseUrl}${endpoint}`;
-    const requestMethod = method.toUpperCase();
+    const url = `${baseUrl}${input.endpoint}`;
+    const requestMethod = input.method.toUpperCase();
     
     // Merge headers, always set auth and content-type
     const requestHeaders: Record<string, string> = {
       "Content-Type": "application/json",
       "Authorization": `Basic ${Buffer.from(`${username}:${token}`).toString('base64')}`,
-      ...(headers || {})
+      ...(input.headers || {})
     };
     
     // Log the request (redact sensitive data)
-    const logInput = { method, endpoint, headers: undefined, body: body ? "[REDACTED]" : undefined };
+    const logInput = { method: input.method, endpoint: input.endpoint, headers: undefined, body: input.body ? "[REDACTED]" : undefined };
     logger.info(logInput, 'Request');
     
     try {
-      const fetchOptions: any = { method: requestMethod, headers: requestHeaders };
-      if (["POST", "PUT", "PATCH"].includes(requestMethod) && body) {
-        fetchOptions.body = JSON.stringify(body);
+      const fetchOptions: RequestInit = { method: requestMethod, headers: requestHeaders };
+      if (["POST", "PUT", "PATCH"].includes(requestMethod) && input.body) {
+        fetchOptions.body = JSON.stringify(input.body);
       }
       
       const response = await fetch(url, fetchOptions);
@@ -101,7 +132,7 @@ const FatZebraPassthroughTool = {
         {
           responsePreview: typeof responseData === "string"
             ? responseData.slice(0, 500)
-            : responseData
+            : redactSensitiveData(responseData)
         },
         'Response'
       );

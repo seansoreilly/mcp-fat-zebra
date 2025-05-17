@@ -37,6 +37,20 @@ class SimpleLogger {
       formattedMessage += ` [${this.component}]`;
     }
     
+    // Helper to handle circular references in JSON.stringify
+    const getCircularReplacer = () => {
+      const seen = new WeakSet();
+      return (key: string, value: any) => {
+        if (typeof value === "object" && value !== null) {
+          if (seen.has(value)) {
+            return "[Circular]";
+          }
+          seen.add(value);
+        }
+        return value;
+      };
+    };
+
     // Handle both object and string first parameters
     if (typeof objOrMessage === 'string') {
       formattedMessage += ` ${objOrMessage}`;
@@ -46,12 +60,12 @@ class SimpleLogger {
       
       // Format the object data
       try {
-        const objStr = JSON.stringify(objOrMessage);
-        if (objStr !== '{}') {
+        const objStr = JSON.stringify(objOrMessage, getCircularReplacer());
+        if (objStr !== '{}' || Object.keys(objOrMessage).length > 0) { // Also check if original object was not empty
           formattedMessage += ` - ${objStr}`;
         }
-      } catch (e) {
-        formattedMessage += ` - [Object]`;
+      } catch (e: any) { // Added type for e
+        formattedMessage += ` - [Unserializable Object: ${e.message}]`; // More informative error
       }
     }
     

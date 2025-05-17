@@ -47,19 +47,19 @@ export default class HelpDocumentation {
     }
 
     try {
-      const files = fs.readdirSync(docsDir);
+      const files = await fs.promises.readdir(docsDir);
       const markdownFiles = files.filter(f => f.endsWith(".md"));
       logger.info({ count: markdownFiles.length, directory: docsDir }, "Found markdown files");
 
-      return markdownFiles.map(filename => {
+      return Promise.all(markdownFiles.map(async (filename) => {
         const filePath = path.join(docsDir!, filename);
-        const text = fs.readFileSync(filePath, "utf-8");
+        const text = await fs.promises.readFile(filePath, "utf-8");
         return {
           uri: `resource:docs/markdown/${filename}`,
           content: text,
           contentType: "text/markdown"
         };
-      });
+      }));
     } catch (error) {
       logger.error({ err: error, directory: docsDir }, "Error reading files");
       return [];

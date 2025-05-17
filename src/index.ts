@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { Tool } from "@modelcontextprotocol/sdk";
 import { logger, getLogger } from "./utils/logger.js";
 import fs from "fs";
 import path from "path";
@@ -18,7 +19,7 @@ const server = new McpServer({
 });
 
 // Function to register a tool
-function registerTool(tool) {
+function registerTool(tool: Tool) {
   if (tool && tool.name && tool.description && tool.schema && tool.execute) {
     server.tool(
       tool.name,
@@ -39,7 +40,7 @@ async function findToolFiles(dir) {
   // Convert to absolute path if needed
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  const absoluteDir = path.isAbsolute(dir) ? dir : path.join(__dirname, dir);
+  const absoluteDir = path.resolve(__dirname, dir);
   
   try {
     const entries = await fs.promises.readdir(absoluteDir, { withFileTypes: true });
